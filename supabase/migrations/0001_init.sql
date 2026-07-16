@@ -193,6 +193,45 @@ returns boolean language sql stable security definer set search_path = public as
   );
 $$;
 
+-- Secure onboarding: create academy + owner membership atomically.
+-- App should call this RPC instead of raw inserts into academies/academy_members.
+create or replace function public.create_academy_with_owner(
+  p_name text,
+  p_phone text default null,
+  p_email text default null,
+  p_instagram text default null,
+  p_city text default null,
+  p_state text default null,
+  p_address text default null,
+  p_description text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_academy_id uuid;
+  v_uid uuid := auth.uid();
+begin
+  if v_uid is null then
+    raise exception 'not authenticated';
+  end if;
+
+  insert into public.academies (name, phone, email, instagram, city, state, address, description)
+  values (p_name, p_phone, p_email, p_instagram, p_city, p_state, p_address, p_description)
+  returning id into v_academy_id;
+
+  insert into public.academy_members (academy_id, profile_id, role, status)
+  values (v_academy_id, v_uid, 'owner', 'active');
+
+  return v_academy_id;
+end;
+$$;
+
+revoke all on function public.create_academy_with_owner from public;
+grant execute on function public.create_academy_with_owner to authenticated;
+
 alter table public.profiles enable row level security;
 alter table public.academies enable row level security;
 alter table public.academy_units enable row level security;
@@ -223,21 +262,25 @@ create policy academies_update_owner on public.academies for update using (
   public.has_academy_role(id, array['owner']::public.member_role[])
 );
 
-create policy units_all_member on public.academy_units for all using (public.is_academy_member(academy_id))
-  with check (
-    public.has_academy_role(academy_id, array['owner','administrator']::public.member_role[])
-  );
+create policy units_select_member on public.academy_units for select using (
+  public.is_academy_member(academy_id)
+);
+create policy units_insert_staff on public.academy_units for insert with check (
+  public.has_academy_role(academy_id, array['owner','administrator']::public.member_role[])
+);
+create policy units_update_staff on public.academy_units for update using (
+  public.has_academy_role(academy_id, array['owner','administrator']::public.member_role[])
+) with check (
+  public.has_academy_role(academy_id, array['owner','administrator']::public.member_role[])
+);
+create policy units_delete_staff on public.academy_units for delete using (
+  public.has_academy_role(academy_id, array['owner','administrator']::public.member_role[])
+);
 
 create policy members_select on public.academy_members for select using (public.is_academy_member(academy_id));
 create policy members_insert_staff on public.academy_members for insert with check (
   public.has_academy_role(academy_id, array['owner','administrator','instructor']::public.member_role[])
 );
--- Bootstrap: first owner can insert themselves (chicken-and-egg with members_insert_staff)
-create policy members_insert_self_owner_bootstrap on public.academy_members
-  for insert with check (
-    profile_id = auth.uid()
-    and role = 'owner'
-  );
 create policy members_update_staff on public.academy_members for update using (
   public.has_academy_role(academy_id, array['owner','administrator','instructor']::public.member_role[])
 );
@@ -301,7 +344,10 @@ create policy att_req_insert on public.attendance_requests for insert with check
     select 1 from public.class_sessions s
     join public.classes c on c.id = s.class_id
     join public.academy_members m on m.id = student_id
-    where s.id = session_id and m.profile_id = auth.uid() and public.is_academy_member(c.academy_id)
+    where s.id = session_id
+      and m.profile_id = auth.uid()
+      and m.academy_id = c.academy_id
+      and public.is_academy_member(c.academy_id)
   )
 );
 create policy att_req_update on public.attendance_requests for update using (
@@ -324,7 +370,9 @@ create policy att_rec_insert on public.attendance_records for insert with check 
   exists (
     select 1 from public.class_sessions s
     join public.classes c on c.id = s.class_id
+    join public.academy_members m on m.id = student_id
     where s.id = session_id
+      and m.academy_id = c.academy_id
       and public.has_academy_role(
         c.academy_id,
         array['owner','administrator','instructor','assistant_instructor']::public.member_role[]
