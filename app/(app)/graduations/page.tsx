@@ -3,6 +3,7 @@ import { listGraduations } from "@/actions/graduations";
 import { listMembers } from "@/actions/members";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
+import { EmptyState } from "@/components/ui/empty-state";
 import { NewGraduationForm } from "./new-graduation-form";
 
 function formatDate(value: string): string {
@@ -64,11 +65,10 @@ export default async function GraduationsPage() {
       <section className="space-y-2">
         <h2 className="text-sm font-medium text-foreground">Histórico</h2>
         {graduations.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl">
-            <p className="text-sm text-muted-foreground">
-              Nenhuma graduação registrada ainda.
-            </p>
-          </div>
+          <EmptyState
+            title="Nenhuma graduação registrada"
+            description="O histórico é append-only: cada promoção fica permanente."
+          />
         ) : (
           graduations.map((g) => (
             <article

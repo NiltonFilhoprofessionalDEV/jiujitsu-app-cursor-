@@ -97,29 +97,19 @@ export async function markNotificationRead(
   }
 }
 
-export async function markAllNotificationsRead(): Promise<NotificationActionState> {
-  try {
-    const member = await getActiveMembership();
-    const supabase = await createClient();
-    const { error } = await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("profile_id", member.profile_id)
-      .eq("is_read", false);
+export async function markAllNotificationsRead(): Promise<void> {
+  const member = await getActiveMembership();
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("notifications")
+    .update({ is_read: true })
+    .eq("profile_id", member.profile_id)
+    .eq("is_read", false);
 
-    if (error) {
-      return { error: error.message };
-    }
-
-    revalidatePath("/notifications");
-    revalidatePath("/home");
-    return { success: "Todas marcadas como lidas." };
-  } catch (err) {
-    return {
-      error:
-        err instanceof Error
-          ? err.message
-          : "Não foi possível atualizar as notificações.",
-    };
+  if (error) {
+    throw error;
   }
+
+  revalidatePath("/notifications");
+  revalidatePath("/home");
 }

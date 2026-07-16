@@ -4,6 +4,7 @@ import {
   markAllNotificationsRead,
 } from "@/actions/notifications";
 import { getActiveMembership } from "@/lib/permissions/assert";
+import { EmptyState } from "@/components/ui/empty-state";
 import { MarkReadButton } from "./mark-read-button";
 
 function formatDateTime(iso: string): string {
@@ -60,11 +61,10 @@ export default async function NotificationsPage() {
 
       <section className="space-y-2">
         {notifications.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl">
-            <p className="text-sm text-muted-foreground">
-              Nenhuma notificação por aqui.
-            </p>
-          </div>
+          <EmptyState
+            title="Caixa vazia"
+            description="Quando houver graduações, presenças ou avisos, eles aparecem aqui."
+          />
         ) : (
           notifications.map((n) => (
             <article

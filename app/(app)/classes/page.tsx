@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { listClasses } from "@/actions/classes";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
+import { EmptyState } from "@/components/ui/empty-state";
 import { WEEKDAY_LABELS, formatTime } from "./labels";
 
 export default async function ClassesPage() {
@@ -45,19 +46,12 @@ export default async function ClassesPage() {
 
       <div className="space-y-2">
         {classes.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl">
-            <p className="text-sm text-muted-foreground">
-              Nenhuma turma cadastrada ainda.
-            </p>
-            {canManage ? (
-              <Link
-                href="/classes/new"
-                className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                Criar turma
-              </Link>
-            ) : null}
-          </div>
+          <EmptyState
+            title="Nenhuma turma cadastrada"
+            description="Crie turmas com horários semanais para abrir aulas e registrar presença."
+            actionHref={canManage ? "/classes/new" : undefined}
+            actionLabel={canManage ? "Criar turma" : undefined}
+          />
         ) : (
           classes.map((klass) => {
             const nextSchedule = klass.schedules?.[0];

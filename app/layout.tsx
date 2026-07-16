@@ -13,6 +13,21 @@ const plusJakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "BJJ Manager",
   description: "Gestão mobile-first para academias de Jiu-Jitsu",
+  applicationName: "BJJ Manager",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "BJJ Manager",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+  },
+  themeColor: "#070b16",
 };
 
 export default function RootLayout({

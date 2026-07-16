@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { listAnnouncements } from "@/actions/announcements";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
+import { EmptyState } from "@/components/ui/empty-state";
 import { NewAnnouncementForm } from "./new-announcement-form";
 
 function formatDateTime(iso: string): string {
@@ -56,11 +57,10 @@ export default async function AnnouncementsPage() {
 
       <section className="space-y-2">
         {announcements.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl">
-            <p className="text-sm text-muted-foreground">
-              Nenhum aviso publicado ainda.
-            </p>
-          </div>
+          <EmptyState
+            title="Nenhum aviso publicado"
+            description="Comunicados da academia aparecem aqui para toda a equipe."
+          />
         ) : (
           announcements.map((a) => (
             <article

@@ -1,11 +1,6 @@
 "use server";
 
-import {
-  assertCapability,
-  getActiveMembership,
-  PermissionError,
-} from "@/lib/permissions/assert";
-import { can } from "@/lib/permissions/capabilities";
+import { assertCapability } from "@/lib/permissions/assert";
 import { createClient } from "@/lib/supabase/server";
 
 export type DashboardMetrics = {
@@ -101,10 +96,7 @@ async function sessionIdsForClasses(classIds: string[]): Promise<string[]> {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
-  const member = await getActiveMembership();
-  if (!can(member.role, "view_dashboard")) {
-    throw new PermissionError(member.role, "view_dashboard");
-  }
+  const member = await assertCapability("view_dashboard");
 
   const supabase = await createClient();
   const academyId = member.academy_id;
@@ -297,8 +289,7 @@ export async function getDashboardData(): Promise<DashboardData> {
 }
 
 export async function getStatsCharts(): Promise<StatsCharts> {
-  await assertCapability("view_dashboard");
-  const member = await getActiveMembership();
+  const member = await assertCapability("view_dashboard");
   const supabase = await createClient();
   const academyId = member.academy_id;
 
