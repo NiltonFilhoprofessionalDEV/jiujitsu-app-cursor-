@@ -73,7 +73,13 @@ export async function updateSession(request: NextRequest) {
   if (!user && isProtectedPath(pathname) && !isPublicPath(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    const redirectResponse = NextResponse.redirect(url);
+    // Preserve refreshed session cookies on the redirect response
+    // (official Supabase SSR pattern).
+    supabaseResponse.cookies.getAll().forEach(({ name, value }) => {
+      redirectResponse.cookies.set(name, value);
+    });
+    return redirectResponse;
   }
 
   return supabaseResponse;
