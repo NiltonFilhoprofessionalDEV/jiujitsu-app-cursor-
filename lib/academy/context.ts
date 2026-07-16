@@ -23,3 +23,8 @@ export async function setActiveAcademyId(academyId: string) {
     secure: process.env.NODE_ENV === "production",
   });
 }
+
+export async function clearActiveAcademyId() {
+  const store = await cookies();
+  store.delete(ACADEMY_COOKIE);
+}

@@ -1,7 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { setActiveAcademyId } from "@/lib/academy/context";
+import {
+  clearActiveAcademyId,
+  setActiveAcademyId,
+} from "@/lib/academy/context";
 import { createClient } from "@/lib/supabase/server";
 import { loginSchema, signupSchema } from "@/lib/validations/auth";
 
@@ -10,14 +13,17 @@ export type AuthActionState = {
 } | null;
 
 function firstValidationError(error: {
-  flatten: () => { formErrors: string[]; fieldErrors: Record<string, string[] | undefined> };
+  flatten: () => {
+    formErrors: string[];
+    fieldErrors: Record<string, string[] | undefined>;
+  };
 }): string {
   const flat = error.flatten();
   const fieldMessage = Object.values(flat.fieldErrors).flat().find(Boolean);
   return fieldMessage ?? flat.formErrors[0] ?? "Dados inválidos";
 }
 
-async function redirectAfterAuth(userId: string) {
+async function redirectAfterAuth(userId: string): Promise<AuthActionState> {
   const supabase = await createClient();
   const { data: members, error } = await supabase
     .from("academy_members")
@@ -26,12 +32,16 @@ async function redirectAfterAuth(userId: string) {
     .eq("status", "active");
 
   if (error) {
-    throw error;
+    return {
+      error:
+        "Não foi possível carregar suas academias. Tente novamente em instantes.",
+    };
   }
 
   const list = members ?? [];
 
   if (list.length === 0) {
+    await clearActiveAcademyId();
     redirect("/create-academy");
   }
 
@@ -40,6 +50,7 @@ async function redirectAfterAuth(userId: string) {
     redirect("/home");
   }
 
+  await clearActiveAcademyId();
   redirect("/select-academy");
 }
 
@@ -70,8 +81,7 @@ export async function login(
     return { error: "Não foi possível autenticar. Tente novamente." };
   }
 
-  await redirectAfterAuth(data.user.id);
-  return null;
+  return await redirectAfterAuth(data.user.id);
 }
 
 export async function signup(
@@ -102,7 +112,7 @@ export async function signup(
   }
 
   if (data.session && data.user) {
-    await redirectAfterAuth(data.user.id);
+    return await redirectAfterAuth(data.user.id);
   }
 
   redirect("/login");
@@ -111,5 +121,6 @@ export async function signup(
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  await clearActiveAcademyId();
   redirect("/login");
 }
