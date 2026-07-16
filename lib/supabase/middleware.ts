@@ -14,14 +14,11 @@ const PROTECTED_PREFIXES = [
   "/notifications",
   "/academy",
   "/profile",
-] as const;
-
-const PUBLIC_PREFIXES = [
-  "/login",
-  "/signup",
   "/create-academy",
   "/select-academy",
 ] as const;
+
+const PUBLIC_PREFIXES = ["/login", "/signup"] as const;
 
 function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some(
