@@ -5,23 +5,25 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Brand / product tokens */
-  --bg0: #070b16;
-  --bg1: #121a2e;
-  --card: rgba(255, 255, 255, 0.06);
-  --card-border: rgba(255, 255, 255, 0.08);
-  --text: #f8fafc;
-  --muted: #94a3b8;
+  /* Brand-only tokens (--bjj-*) — avoid colliding with shadcn semantic vars */
+  --bjj-bg0: #070b16;
+  --bjj-bg1: #121a2e;
+  --bjj-card-border: rgba(255, 255, 255, 0.08);
+  --bjj-text: #f8fafc;
+  --bjj-muted: #94a3b8;
+  --bjj-action-blue: #3b82f6;
+  --bjj-action-purple: #8b5cf6;
+  --bjj-action-pink: #ec4899;
+  --bjj-danger: #f97316;
+
+  /* Shared / intentional: --accent is brand green AND shadcn accent */
   --accent: #22c55e;
-  --action-blue: #3b82f6;
-  --action-purple: #8b5cf6;
-  --action-pink: #ec4899;
-  --danger: #f97316;
   --radius: 1.25rem;
 
   /* shadcn semantic tokens (dark + green accent) */
   --background: #070b16;
   --foreground: #f8fafc;
+  --card: rgba(255, 255, 255, 0.06);
   --card-foreground: #f8fafc;
   --popover: #121a2e;
   --popover-foreground: #f8fafc;
@@ -29,6 +31,7 @@
   --primary-foreground: #052e16;
   --secondary: rgba(255, 255, 255, 0.08);
   --secondary-foreground: #f8fafc;
+  --muted: rgba(255, 255, 255, 0.06);
   --muted-foreground: #94a3b8;
   --accent-foreground: #052e16;
   --destructive: #f97316;
@@ -61,9 +64,8 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  /* Brand --muted is text; Tailwind muted uses a surface + foreground */
-  --color-muted: rgba(255, 255, 255, 0.06);
-  --color-muted-foreground: var(--muted);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
@@ -90,8 +92,8 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  --font-sans: var(--font-sans);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-plus-jakarta);
+  --font-heading: var(--font-plus-jakarta);
 }
 
 .dark {
@@ -105,7 +107,7 @@
   --primary-foreground: #052e16;
   --secondary: rgba(255, 255, 255, 0.08);
   --secondary-foreground: #f8fafc;
-  --muted: #94a3b8;
+  --muted: rgba(255, 255, 255, 0.06);
   --muted-foreground: #94a3b8;
   --accent: #22c55e;
   --accent-foreground: #052e16;
@@ -130,8 +132,13 @@
 
 body {
   min-height: 100dvh;
-  color: var(--text);
-  background: linear-gradient(165deg, var(--bg0) 0%, var(--bg1) 55%, #0d1526 100%);
+  color: var(--bjj-text);
+  background: linear-gradient(
+    165deg,
+    var(--bjj-bg0) 0%,
+    var(--bjj-bg1) 55%,
+    #0d1526 100%
+  );
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
