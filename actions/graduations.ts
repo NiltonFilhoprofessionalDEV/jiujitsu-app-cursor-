@@ -191,10 +191,10 @@ export async function createGraduation(
       return { error: updateError.message };
     }
 
-    await supabase.from("notifications").insert({
-      profile_id: target.profile_id,
-      title: "Nova graduação",
-      description: `Você foi graduado para faixa ${memberPatch.current_belt} (grau ${memberPatch.current_degree}).`,
+    await supabase.rpc("notify_profile", {
+      p_profile_id: target.profile_id,
+      p_title: "Nova graduação",
+      p_description: `Você foi graduado para faixa ${memberPatch.current_belt} (grau ${memberPatch.current_degree}).`,
     });
 
     revalidatePath("/graduations");

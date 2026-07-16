@@ -7,7 +7,6 @@ import {
 } from "@/lib/attendance/rules";
 import {
   assertCapability,
-  getActiveMembership,
   PermissionError,
 } from "@/lib/permissions/assert";
 import { createClient } from "@/lib/supabase/server";
@@ -150,7 +149,7 @@ export async function requestCheckin(
 export async function listPendingRequests(
   sessionId: string,
 ): Promise<PendingAttendanceRequest[]> {
-  const member = await getActiveMembership();
+  const member = await assertCapability("approve_attendance");
   const session = await loadSessionForAcademy(sessionId, member.academy_id);
   if (!session) {
     return [];
@@ -291,26 +290,13 @@ export async function approveCheckin(
       return { error: "Apenas pedidos pendentes podem ser aprovados." };
     }
 
-    const { error: updateError } = await supabase
-      .from("attendance_requests")
-      .update({ status: "approved" })
-      .eq("id", requestId)
-      .eq("status", "pending");
+    const { error: rpcError } = await supabase.rpc(
+      "approve_attendance_request",
+      { p_request_id: requestId },
+    );
 
-    if (updateError) {
-      return { error: updateError.message };
-    }
-
-    const { error: recordError } = await supabase
-      .from("attendance_records")
-      .insert({
-        session_id: request.session_id,
-        student_id: request.student_id,
-        attendance_type: "self_checkin",
-      });
-
-    if (recordError) {
-      return { error: recordError.message };
+    if (rpcError) {
+      return { error: rpcError.message };
     }
 
     const memberRel = request.academy_members as
@@ -326,10 +312,10 @@ export async function approveCheckin(
     const am = Array.isArray(memberRel) ? memberRel[0] : memberRel;
 
     if (am?.profile_id) {
-      await supabase.from("notifications").insert({
-        profile_id: am.profile_id,
-        title: "Presença aprovada",
-        description: `Sua presença na aula ${klass.name} foi confirmada.`,
+      await supabase.rpc("notify_profile", {
+        p_profile_id: am.profile_id,
+        p_title: "Presença aprovada",
+        p_description: `Sua presença na aula ${klass.name} foi confirmada.`,
       });
     }
 

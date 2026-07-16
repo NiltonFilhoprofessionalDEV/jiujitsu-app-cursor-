@@ -114,9 +114,18 @@ function mapMemberRow(row: {
   current_belt: string | null;
   current_degree: number;
   joined_at: string;
-  emergency_contact_name: string | null;
-  emergency_contact_phone: string | null;
-  medical_notes: string | null;
+  member_private_details?:
+    | {
+        emergency_contact_name: string | null;
+        emergency_contact_phone: string | null;
+        medical_notes: string | null;
+      }
+    | {
+        emergency_contact_name: string | null;
+        emergency_contact_phone: string | null;
+        medical_notes: string | null;
+      }[]
+    | null;
   profiles:
     | {
         id: string;
@@ -137,6 +146,11 @@ function mapMemberRow(row: {
   const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
   if (!profile) return null;
 
+  const privateRel = row.member_private_details;
+  const privateDetails = Array.isArray(privateRel)
+    ? privateRel[0]
+    : privateRel;
+
   return {
     id: row.id,
     academy_id: row.academy_id,
@@ -146,9 +160,9 @@ function mapMemberRow(row: {
     current_belt: row.current_belt,
     current_degree: row.current_degree,
     joined_at: row.joined_at,
-    emergency_contact_name: row.emergency_contact_name,
-    emergency_contact_phone: row.emergency_contact_phone,
-    medical_notes: row.medical_notes,
+    emergency_contact_name: privateDetails?.emergency_contact_name ?? null,
+    emergency_contact_phone: privateDetails?.emergency_contact_phone ?? null,
+    medical_notes: privateDetails?.medical_notes ?? null,
     profile: {
       id: profile.id,
       name: profile.name,
@@ -157,6 +171,75 @@ function mapMemberRow(row: {
       phone: profile.phone,
     },
   };
+}
+
+const MEMBER_SELECT = `
+  id,
+  academy_id,
+  profile_id,
+  role,
+  status,
+  current_belt,
+  current_degree,
+  joined_at,
+  member_private_details(
+    emergency_contact_name,
+    emergency_contact_phone,
+    medical_notes
+  ),
+  profiles(id, name, email, avatar_url, phone)
+`;
+
+async function upsertPrivateDetails(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  memberId: string,
+  details: {
+    emergency_contact_name?: string | null;
+    emergency_contact_phone?: string | null;
+    medical_notes?: string | null;
+  },
+): Promise<string | null> {
+  const hasAny =
+    details.emergency_contact_name !== undefined ||
+    details.emergency_contact_phone !== undefined ||
+    details.medical_notes !== undefined;
+
+  if (!hasAny) return null;
+
+  const { data: existing } = await supabase
+    .from("member_private_details")
+    .select("member_id")
+    .eq("member_id", memberId)
+    .maybeSingle();
+
+  const payload: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+  if (details.emergency_contact_name !== undefined) {
+    payload.emergency_contact_name = details.emergency_contact_name ?? null;
+  }
+  if (details.emergency_contact_phone !== undefined) {
+    payload.emergency_contact_phone = details.emergency_contact_phone ?? null;
+  }
+  if (details.medical_notes !== undefined) {
+    payload.medical_notes = details.medical_notes ?? null;
+  }
+
+  if (existing) {
+    const { error } = await supabase
+      .from("member_private_details")
+      .update(payload)
+      .eq("member_id", memberId);
+    return error?.message ?? null;
+  }
+
+  const { error } = await supabase.from("member_private_details").insert({
+    member_id: memberId,
+    emergency_contact_name: details.emergency_contact_name ?? null,
+    emergency_contact_phone: details.emergency_contact_phone ?? null,
+    medical_notes: details.medical_notes ?? null,
+  });
+  return error?.message ?? null;
 }
 
 export async function listMembers(
@@ -176,22 +259,7 @@ export async function listMembers(
   const supabase = await createClient();
   let query = supabase
     .from("academy_members")
-    .select(
-      `
-      id,
-      academy_id,
-      profile_id,
-      role,
-      status,
-      current_belt,
-      current_degree,
-      joined_at,
-      emergency_contact_name,
-      emergency_contact_phone,
-      medical_notes,
-      profiles(id, name, email, avatar_url, phone)
-    `,
-    )
+    .select(MEMBER_SELECT)
     .eq("academy_id", member.academy_id)
     .order("joined_at", { ascending: false });
 
@@ -230,22 +298,7 @@ export async function getMember(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("academy_members")
-    .select(
-      `
-      id,
-      academy_id,
-      profile_id,
-      role,
-      status,
-      current_belt,
-      current_degree,
-      joined_at,
-      emergency_contact_name,
-      emergency_contact_phone,
-      medical_notes,
-      profiles(id, name, email, avatar_url, phone)
-    `,
-    )
+    .select(MEMBER_SELECT)
     .eq("id", memberId)
     .eq("academy_id", actor.academy_id)
     .maybeSingle();
@@ -338,20 +391,31 @@ export async function createMemberByEmail(
     return { error: "Esta pessoa já é membro desta academia." };
   }
 
-  const { error: insertError } = await supabase.from("academy_members").insert({
-    academy_id: actor.academy_id,
-    profile_id: profile.id,
-    role: parsed.data.role,
-    status: parsed.data.status,
-    current_belt: parsed.data.current_belt ?? null,
-    current_degree: parsed.data.current_degree ?? 0,
+  const { data: inserted, error: insertError } = await supabase
+    .from("academy_members")
+    .insert({
+      academy_id: actor.academy_id,
+      profile_id: profile.id,
+      role: parsed.data.role,
+      status: parsed.data.status,
+      current_belt: parsed.data.current_belt ?? null,
+      current_degree: parsed.data.current_degree ?? 0,
+    })
+    .select("id")
+    .single();
+
+  if (insertError) {
+    return { error: insertError.message };
+  }
+
+  const privateError = await upsertPrivateDetails(supabase, inserted.id, {
     emergency_contact_name: parsed.data.emergency_contact_name ?? null,
     emergency_contact_phone: parsed.data.emergency_contact_phone ?? null,
     medical_notes: parsed.data.medical_notes ?? null,
   });
 
-  if (insertError) {
-    return { error: insertError.message };
+  if (privateError) {
+    return { error: privateError };
   }
 
   revalidatePath("/members");
@@ -418,17 +482,6 @@ export async function updateMember(
     if (parsed.data.current_degree !== undefined) {
       payload.current_degree = parsed.data.current_degree;
     }
-    if (parsed.data.emergency_contact_name !== undefined) {
-      payload.emergency_contact_name =
-        parsed.data.emergency_contact_name ?? null;
-    }
-    if (parsed.data.emergency_contact_phone !== undefined) {
-      payload.emergency_contact_phone =
-        parsed.data.emergency_contact_phone ?? null;
-    }
-    if (parsed.data.medical_notes !== undefined) {
-      payload.medical_notes = parsed.data.medical_notes ?? null;
-    }
 
     const { error: updateError } = await supabase
       .from("academy_members")
@@ -438,6 +491,16 @@ export async function updateMember(
 
     if (updateError) {
       return { error: updateError.message };
+    }
+
+    const privateError = await upsertPrivateDetails(supabase, parsed.data.id, {
+      emergency_contact_name: parsed.data.emergency_contact_name,
+      emergency_contact_phone: parsed.data.emergency_contact_phone,
+      medical_notes: parsed.data.medical_notes,
+    });
+
+    if (privateError) {
+      return { error: privateError };
     }
 
     revalidatePath("/members");

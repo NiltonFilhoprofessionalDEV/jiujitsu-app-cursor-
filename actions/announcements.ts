@@ -125,16 +125,12 @@ export async function createAnnouncement(
         ),
       ];
 
-      if (profileIds.length > 0) {
-        const { error: notifyError } = await supabase
-          .from("notifications")
-          .insert(
-            profileIds.map((profile_id) => ({
-              profile_id,
-              title: parsed.data.title,
-              description: parsed.data.description,
-            })),
-          );
+      for (const profile_id of profileIds) {
+        const { error: notifyError } = await supabase.rpc("notify_profile", {
+          p_profile_id: profile_id,
+          p_title: parsed.data.title,
+          p_description: parsed.data.description,
+        });
 
         if (notifyError) {
           return { error: notifyError.message };
