@@ -172,7 +172,13 @@ export async function listMyAcademies(): Promise<MyAcademy[]> {
   });
 }
 
-export async function selectAcademy(academyId: string): Promise<void> {
+export type SelectAcademyState = {
+  error?: string;
+} | null;
+
+export async function selectAcademy(
+  academyId: string,
+): Promise<{ error: string }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -191,19 +197,22 @@ export async function selectAcademy(academyId: string): Promise<void> {
     .maybeSingle();
 
   if (error || !member) {
-    throw new Error("Você não pertence a esta academia");
+    return { error: "Você não pertence a esta academia" };
   }
 
   await setActiveAcademyId(academyId);
   redirect("/home");
 }
 
-export async function selectAcademyFromForm(formData: FormData): Promise<void> {
+export async function selectAcademyFromForm(
+  _prevState: SelectAcademyState,
+  formData: FormData,
+): Promise<SelectAcademyState> {
   const academyId = formData.get("academyId");
   if (typeof academyId !== "string" || !academyId) {
-    throw new Error("Academia inválida");
+    return { error: "Academia inválida" };
   }
-  await selectAcademy(academyId);
+  return selectAcademy(academyId);
 }
 
 export async function getActiveAcademy(): Promise<AcademyDetails | null> {
