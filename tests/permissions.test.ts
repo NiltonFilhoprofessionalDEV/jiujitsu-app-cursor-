@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { can } from "@/lib/permissions/capabilities";
+import { assertCan, PermissionError } from "@/lib/permissions/assert";
 
 describe("can", () => {
   it("allows instructor to manage members", () => {
@@ -16,5 +17,15 @@ describe("can", () => {
   });
   it("allows owner manage_academy", () => {
     expect(can("owner", "manage_academy")).toBe(true);
+  });
+});
+
+describe("assertCan", () => {
+  it("throws PermissionError when role lacks capability", () => {
+    expect(() => assertCan("student", "manage_members")).toThrow(PermissionError);
+  });
+
+  it("does not throw when role has capability", () => {
+    expect(() => assertCan("owner", "manage_academy")).not.toThrow();
   });
 });
