@@ -1,0 +1,104 @@
+import { z } from "zod";
+import { beltSchema } from "@/lib/validations/members";
+
+const optionalString = z
+  .string()
+  .trim()
+  .transform((value) => (value === "" ? undefined : value));
+
+const optionalUuid = optionalString.pipe(z.string().uuid().optional());
+
+const optionalAge = z
+  .union([
+    z.literal(""),
+    z.coerce.number().int().min(0, "Idade inválida").max(120, "Idade inválida"),
+  ])
+  .optional()
+  .transform((value) =>
+    value === "" || value === undefined ? undefined : value,
+  );
+
+const optionalBelt = z
+  .union([beltSchema, z.literal(""), z.null()])
+  .optional()
+  .transform((value) => {
+    if (value === undefined) return undefined;
+    if (value === "" || value === null) return null;
+    return value;
+  });
+
+const timeSchema = z
+  .string()
+  .trim()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, "Horário inválido (HH:MM)");
+
+const booleanFromForm = z
+  .union([
+    z.boolean(),
+    z.literal("true"),
+    z.literal("false"),
+    z.literal("on"),
+    z.literal(""),
+  ])
+  .optional()
+  .transform((value) => {
+    if (value === undefined || value === "") return undefined;
+    if (typeof value === "boolean") return value;
+    return value === "true" || value === "on";
+  });
+
+export const weekdaySchema = z.coerce
+  .number()
+  .int()
+  .min(0, "Dia da semana inválido")
+  .max(6, "Dia da semana inválido");
+
+export const createClassSchema = z.object({
+  name: z.string().trim().min(1, "Nome é obrigatório"),
+  description: optionalString,
+  unit_id: optionalUuid,
+  minimum_age: optionalAge,
+  maximum_age: optionalAge,
+  minimum_belt: optionalBelt,
+  maximum_belt: optionalBelt,
+  is_active: booleanFromForm.transform((value) => value ?? true),
+});
+
+export const updateClassSchema = createClassSchema.extend({
+  id: z.string().uuid("Turma inválida"),
+  is_active: booleanFromForm,
+});
+
+export const createScheduleSchema = z
+  .object({
+    class_id: z.string().uuid("Turma inválida"),
+    weekday: weekdaySchema,
+    start_time: timeSchema,
+    end_time: timeSchema,
+  })
+  .refine((data) => data.start_time < data.end_time, {
+    message: "Horário de início deve ser anterior ao fim",
+    path: ["end_time"],
+  });
+
+export const updateScheduleSchema = z
+  .object({
+    id: z.string().uuid("Horário inválido"),
+    weekday: weekdaySchema,
+    start_time: timeSchema,
+    end_time: timeSchema,
+  })
+  .refine((data) => data.start_time < data.end_time, {
+    message: "Horário de início deve ser anterior ao fim",
+    path: ["end_time"],
+  });
+
+export const deleteScheduleSchema = z.object({
+  id: z.string().uuid("Horário inválido"),
+  class_id: z.string().uuid("Turma inválida"),
+});
+
+export type CreateClassInput = z.infer<typeof createClassSchema>;
+export type UpdateClassInput = z.infer<typeof updateClassSchema>;
+export type CreateScheduleInput = z.infer<typeof createScheduleSchema>;
+export type UpdateScheduleInput = z.infer<typeof updateScheduleSchema>;
