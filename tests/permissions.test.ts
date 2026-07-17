@@ -12,8 +12,14 @@ describe("can", () => {
   it("allows student self_checkin", () => {
     expect(can("student", "self_checkin")).toBe(true);
   });
-  it("denies assistant_instructor approve_attendance", () => {
-    expect(can("assistant_instructor", "approve_attendance")).toBe(false);
+  it("allows assistant_instructor approve_attendance", () => {
+    expect(can("assistant_instructor", "approve_attendance")).toBe(true);
+  });
+  it("allows assistant_instructor manual_attendance", () => {
+    expect(can("assistant_instructor", "manual_attendance")).toBe(true);
+  });
+  it("denies assistant_instructor close_session", () => {
+    expect(can("assistant_instructor", "close_session")).toBe(false);
   });
   it("allows owner manage_academy", () => {
     expect(can("owner", "manage_academy")).toBe(true);
@@ -29,6 +35,19 @@ describe("can", () => {
   });
   it("denies assistant_instructor manage_virtual_lessons", () => {
     expect(can("assistant_instructor", "manage_virtual_lessons")).toBe(false);
+  });
+  it("allows student view_own_journey", () => {
+    expect(can("student", "view_own_journey")).toBe(true);
+  });
+  it("allows instructor student and teaching journey", () => {
+    expect(can("instructor", "view_own_journey")).toBe(true);
+    expect(can("instructor", "view_teaching_journey")).toBe(true);
+  });
+  it("denies student view_teaching_journey", () => {
+    expect(can("student", "view_teaching_journey")).toBe(false);
+  });
+  it("denies guardian view_own_journey in v1", () => {
+    expect(can("guardian", "view_own_journey")).toBe(false);
   });
 });
 

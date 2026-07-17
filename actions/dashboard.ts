@@ -1,6 +1,11 @@
 "use server";
 
 import { assertCapability } from "@/lib/permissions/assert";
+import {
+  findNextTraining,
+  type ScheduleSlot,
+} from "@/lib/classes/next-training";
+import { resolveTimezone } from "@/lib/sessions/auto-open";
 import { createClient } from "@/lib/supabase/server";
 
 export type DashboardMetrics = {
@@ -29,10 +34,33 @@ export type RecentGraduationItem = {
   member_name: string;
 };
 
+export type OpenSessionBoardItem = {
+  id: string;
+  classId: string;
+  className: string;
+  startedAt: string | null;
+  presentCount: number;
+  pendingCount: number;
+};
+
+export type NextClassBoard = {
+  classId: string;
+  className: string;
+  startTime: string;
+  endTime: string;
+  instructorName: string | null;
+  openSessionId: string | null;
+  isOngoing: boolean;
+  dayOffset: number;
+} | null;
+
 export type DashboardData = {
   metrics: DashboardMetrics;
   recentAttendance: RecentAttendanceItem[];
   recentGraduations: RecentGraduationItem[];
+  openSessions: OpenSessionBoardItem[];
+  pendingApprovals: number;
+  nextClass: NextClassBoard;
 };
 
 export type StatsCharts = {
@@ -272,6 +300,190 @@ export async function getDashboardData(): Promise<DashboardData> {
     });
   }
 
+  // --- Ops board: open sessions, pending queue, next class ---
+  let openSessions: OpenSessionBoardItem[] = [];
+  let pendingApprovals = 0;
+  let nextClass: NextClassBoard = null;
+
+  const { data: openRows } = await supabase
+    .from("class_sessions")
+    .select(
+      `
+      id,
+      class_id,
+      started_at,
+      classes!inner(id, name, academy_id)
+    `,
+    )
+    .eq("status", "open")
+    .eq("classes.academy_id", academyId)
+    .order("started_at", { ascending: false });
+
+  const openList = (openRows ?? []).flatMap((row) => {
+    const klass = row.classes as
+      | { id: string; name: string; academy_id: string }
+      | { id: string; name: string; academy_id: string }[]
+      | null;
+    const one = Array.isArray(klass) ? klass[0] : klass;
+    if (!one || one.academy_id !== academyId) return [];
+    return [
+      {
+        id: row.id as string,
+        classId: row.class_id as string,
+        className: one.name ?? "Turma",
+        startedAt: (row.started_at as string | null) ?? null,
+      },
+    ];
+  });
+
+  if (openList.length > 0) {
+    const openIds = openList.map((s) => s.id);
+    const [{ data: presentRows }, { data: pendingRows }] = await Promise.all([
+      supabase
+        .from("attendance_records")
+        .select("session_id")
+        .in("session_id", openIds),
+      supabase
+        .from("attendance_requests")
+        .select("session_id")
+        .eq("status", "pending")
+        .in("session_id", openIds),
+    ]);
+
+    const presentMap = new Map<string, number>();
+    for (const row of presentRows ?? []) {
+      const sid = row.session_id as string;
+      presentMap.set(sid, (presentMap.get(sid) ?? 0) + 1);
+    }
+    const pendingMap = new Map<string, number>();
+    for (const row of pendingRows ?? []) {
+      const sid = row.session_id as string;
+      pendingMap.set(sid, (pendingMap.get(sid) ?? 0) + 1);
+    }
+
+    openSessions = openList.map((s) => ({
+      ...s,
+      presentCount: presentMap.get(s.id) ?? 0,
+      pendingCount: pendingMap.get(s.id) ?? 0,
+    }));
+    pendingApprovals = openSessions.reduce((sum, s) => sum + s.pendingCount, 0);
+  }
+
+  const [{ data: academyRow }, { data: classRows }] = await Promise.all([
+    supabase
+      .from("academies")
+      .select("timezone")
+      .eq("id", academyId)
+      .maybeSingle(),
+    supabase
+      .from("classes")
+      .select(
+        `
+        id,
+        name,
+        is_active,
+        default_instructor_id,
+        class_schedules(id, weekday, start_time, end_time)
+      `,
+      )
+      .eq("academy_id", academyId)
+      .eq("is_active", true),
+  ]);
+
+  const timeZone = resolveTimezone(
+    null,
+    (academyRow?.timezone as string | null) ?? null,
+  );
+  const now = new Date();
+  const openByClassId = new Map(
+    openSessions.map((s) => [s.classId, s.id] as const),
+  );
+
+  type Candidate = {
+    classId: string;
+    className: string;
+    instructorId: string | null;
+    schedule: ScheduleSlot;
+  };
+
+  const candidates: Candidate[] = [];
+  for (const row of classRows ?? []) {
+    const schedules = (row.class_schedules as ScheduleSlot[] | null) ?? [];
+    for (const schedule of schedules) {
+      candidates.push({
+        classId: row.id as string,
+        className: row.name as string,
+        instructorId: (row.default_instructor_id as string | null) ?? null,
+        schedule: {
+          id: schedule.id,
+          weekday: Number(schedule.weekday),
+          start_time: String(schedule.start_time),
+          end_time: String(schedule.end_time),
+        },
+      });
+    }
+  }
+
+  type Scored = {
+    classId: string;
+    className: string;
+    instructorId: string | null;
+    startTime: string;
+    endTime: string;
+    isOngoing: boolean;
+    dayOffset: number;
+  };
+
+  const scored: Scored[] = [];
+  for (const candidate of candidates) {
+    const next = findNextTraining([candidate.schedule], now, timeZone);
+    if (!next) continue;
+    scored.push({
+      classId: candidate.classId,
+      className: candidate.className,
+      instructorId: candidate.instructorId,
+      startTime: next.startTime,
+      endTime: next.endTime,
+      isOngoing: next.isOngoing,
+      dayOffset: next.dayOffset,
+    });
+  }
+
+  scored.sort((a, b) => {
+    if (a.isOngoing !== b.isOngoing) return a.isOngoing ? -1 : 1;
+    if (a.dayOffset !== b.dayOffset) return a.dayOffset - b.dayOffset;
+    return a.startTime.localeCompare(b.startTime);
+  });
+
+  const top = scored[0] ?? null;
+  if (top) {
+    let instructorName: string | null = null;
+    if (top.instructorId) {
+      const { data: instructor } = await supabase
+        .from("academy_members")
+        .select("profiles(name)")
+        .eq("id", top.instructorId)
+        .maybeSingle();
+      const profile = instructor?.profiles as
+        | { name: string }
+        | { name: string }[]
+        | null
+        | undefined;
+      const one = Array.isArray(profile) ? profile[0] : profile;
+      instructorName = one?.name ?? null;
+    }
+    nextClass = {
+      classId: top.classId,
+      className: top.className,
+      startTime: top.startTime,
+      endTime: top.endTime,
+      instructorName,
+      openSessionId: openByClassId.get(top.classId) ?? null,
+      isOngoing: top.isOngoing,
+      dayOffset: top.dayOffset,
+    };
+  }
+
   return {
     metrics: {
       activeStudents: activeStudents ?? 0,
@@ -285,6 +497,9 @@ export async function getDashboardData(): Promise<DashboardData> {
     },
     recentAttendance,
     recentGraduations,
+    openSessions,
+    pendingApprovals,
+    nextClass,
   };
 }
 

@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { setActiveAcademyId } from "@/lib/academy/context";
+import { defaultAppHomePath } from "@/lib/journey/nav";
 import { assertCapability } from "@/lib/permissions/assert";
 import { createClient } from "@/lib/supabase/server";
 import { createInviteSchema } from "@/lib/validations/invites";
@@ -110,7 +111,7 @@ export async function createInvite(
 
   const origin = await appOrigin();
   const inviteUrl = `${origin}/invite/${token}`;
-  const message = `Olá! Você foi convidado para entrar na academia "${academy.name}" no app BJJ Manager.\n\nAcesse o link para se cadastrar:\n${inviteUrl}`;
+  const message = `Olá! Você foi convidado para entrar na academia "${academy.name}" no app BJJ Pulse.\n\nAcesse o link para se cadastrar:\n${inviteUrl}`;
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
 
   return {
@@ -184,5 +185,21 @@ export async function acceptInvite(token: string) {
   }
 
   await setActiveAcademyId(academyId);
+  const supabaseRole = await createClient();
+  const {
+    data: { user: currentUser },
+  } = await supabaseRole.auth.getUser();
+  if (currentUser) {
+    const { data: member } = await supabaseRole
+      .from("academy_members")
+      .select("role")
+      .eq("profile_id", currentUser.id)
+      .eq("academy_id", academyId)
+      .eq("status", "active")
+      .maybeSingle();
+    if (member?.role) {
+      redirect(defaultAppHomePath(member.role as MemberRole));
+    }
+  }
   redirect("/home");
 }

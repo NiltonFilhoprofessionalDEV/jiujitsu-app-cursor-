@@ -81,6 +81,7 @@ export const listMembersFilterSchema = z.object({
   role: optionalString.pipe(memberRoleSchema.optional()),
   status: optionalString.pipe(memberStatusSchema.optional()),
   belt: optionalBelt,
+  q: optionalString,
 });
 
 export type CreateMemberByEmailInput = z.infer<typeof createMemberByEmailSchema>;

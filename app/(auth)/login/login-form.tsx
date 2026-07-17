@@ -63,17 +63,21 @@ export function LoginForm({ next }: { next?: string }) {
 
       <InstallAppButton />
 
-      <p className="text-center text-sm text-muted-foreground">
-        Não tem conta?{" "}
-        <Link
-          href={
-            next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"
-          }
-          className="font-medium text-primary underline-offset-4 hover:underline"
-        >
-          Criar conta
-        </Link>
-      </p>
+      {next ? (
+        <p className="text-center text-sm text-muted-foreground">
+          Não tem conta?{" "}
+          <Link
+            href={`/signup?next=${encodeURIComponent(next)}`}
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Criar conta
+          </Link>
+        </p>
+      ) : (
+        <p className="text-center text-sm text-muted-foreground">
+          Cadastro só com link de convite da academia.
+        </p>
+      )}
     </div>
   );
 }

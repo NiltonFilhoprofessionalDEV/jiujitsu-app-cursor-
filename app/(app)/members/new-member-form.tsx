@@ -160,7 +160,7 @@ export function NewMemberForm({
         disabled={pending}
         className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90"
       >
-        {pending ? "Vinculando…" : "Vincular membro"}
+        {pending ? "Adicionando…" : "Adicionar membro"}
       </Button>
     </form>
   );

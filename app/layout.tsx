@@ -17,13 +17,13 @@ const body = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "BJJ Manager",
+  title: "BJJ Pulse",
   description: "Gestão mobile-first para academias de Jiu-Jitsu",
-  applicationName: "BJJ Manager",
+  applicationName: "BJJ Pulse",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "BJJ Manager",
+    title: "BJJ Pulse",
   },
   icons: {
     icon: [

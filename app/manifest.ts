@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "BJJ Manager",
-    short_name: "BJJ Manager",
+    name: "BJJ Pulse",
+    short_name: "BJJ Pulse",
     description: "Gestão mobile-first para academias de Jiu-Jitsu",
     start_url: "/home",
     display: "standalone",

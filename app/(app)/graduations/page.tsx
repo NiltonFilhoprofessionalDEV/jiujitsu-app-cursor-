@@ -1,19 +1,57 @@
 import { redirect } from "next/navigation";
+import type { GraduationRow } from "@/actions/graduations";
 import { listGraduations } from "@/actions/graduations";
 import { listMembers } from "@/actions/members";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
-import { NewGraduationForm } from "./new-graduation-form";
+import { GraduationHistoryCard } from "./graduation-history-card";
+import { GraduationsFilterBar } from "./graduations-filter-bar";
+import { NewGraduationSheet } from "./new-graduation-sheet";
 
-function formatDate(value: string): string {
-  const date = new Date(`${value}T12:00:00`);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("pt-BR");
+function withPreviousBelt(graduations: GraduationRow[]) {
+  return graduations.map((graduation) => {
+    const siblings = graduations.filter(
+      (item) => item.member_id === graduation.member_id,
+    );
+    const index = siblings.findIndex((item) => item.id === graduation.id);
+    const previous = index >= 0 ? siblings[index + 1] : undefined;
+
+    return {
+      ...graduation,
+      previous_belt: previous?.belt ?? null,
+      previous_degree: previous?.degree ?? null,
+    };
+  });
 }
 
-export default async function GraduationsPage() {
+function applyFilters(
+  graduations: ReturnType<typeof withPreviousBelt>,
+  filters: { q?: string; belt?: string; from?: string; to?: string },
+) {
+  const q = filters.q?.trim().toLowerCase();
+  return graduations.filter((item) => {
+    if (q && !item.member_name.toLowerCase().includes(q)) return false;
+    if (filters.belt && item.belt !== filters.belt) return false;
+    if (filters.from && item.graduated_at < filters.from) return false;
+    if (filters.to && item.graduated_at > filters.to) return false;
+    return true;
+  });
+}
+
+export default async function GraduationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    member?: string;
+    new?: string;
+    q?: string;
+    belt?: string;
+    from?: string;
+    to?: string;
+  }>;
+}) {
   let membership;
   try {
     membership = await getActiveMembership();
@@ -26,7 +64,9 @@ export default async function GraduationsPage() {
     redirect("/home");
   }
 
-  let graduations: Awaited<ReturnType<typeof listGraduations>> = [];
+  const params = await searchParams;
+
+  let graduations: GraduationRow[] = [];
   let members: Awaited<ReturnType<typeof listMembers>> = [];
 
   try {
@@ -45,58 +85,86 @@ export default async function GraduationsPage() {
     current_degree: m.current_degree,
   }));
 
+  const withPrevious = withPreviousBelt(graduations);
+  const filtered = applyFilters(withPrevious, {
+    q: params.q,
+    belt: params.belt,
+    from: params.from,
+    to: params.to,
+  });
+
+  const hasActiveFilters = Boolean(
+    params.q?.trim() || params.belt || params.from || params.to,
+  );
+  const openNewSheet =
+    canGraduate && (params.new === "1" || Boolean(params.member));
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title="Graduações"
         description="Histórico permanente — faixas nunca somem"
       />
 
-      {canGraduate ? (
-        <section className="space-y-3 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl">
-          <h2 className="text-sm font-medium text-foreground">Nova graduação</h2>
-          <NewGraduationForm members={memberOptions} />
-        </section>
-      ) : null}
+      <GraduationsFilterBar
+        initial={{
+          q: params.q,
+          belt: params.belt,
+          from: params.from,
+          to: params.to,
+        }}
+      />
 
       <section className="space-y-2">
-        <h2 className="text-sm font-medium text-foreground">Histórico</h2>
-        {graduations.length === 0 ? (
+        <div className="flex items-end justify-between gap-2 px-0.5">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Histórico
+          </p>
+          <p className="text-[10px] tabular-nums text-muted-foreground">
+            {filtered.length}
+          </p>
+        </div>
+
+        {filtered.length === 0 ? (
           <EmptyState
-            title="Nenhuma faixa no mural"
-            description="Cada promoção fica permanente. Registre a primeira quando o aluno subir de grau."
+            title={
+              hasActiveFilters
+                ? "Nenhuma graduação encontrada"
+                : "Nenhuma faixa no mural"
+            }
+            description={
+              hasActiveFilters
+                ? "Ajuste os filtros ou limpe para ver o histórico completo."
+                : "Cada promoção fica permanente. Registre a primeira quando o aluno subir de grau."
+            }
+            actionHref={
+              canGraduate && !hasActiveFilters
+                ? "/graduations?new=1"
+                : undefined
+            }
+            actionLabel={
+              canGraduate && !hasActiveFilters
+                ? "Registrar primeira graduação"
+                : undefined
+            }
           />
         ) : (
-          graduations.map((g) => (
-            <article
-              key={g.id}
-              className="rounded-2xl border border-border bg-card p-4 backdrop-blur-xl"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-foreground">
-                    {g.member_name}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--action-red)]">
-                    {g.belt} · grau {g.degree}
-                  </p>
-                </div>
-                <time className="shrink-0 text-xs text-muted-foreground">
-                  {formatDate(g.graduated_at)}
-                </time>
-              </div>
-              {g.notes ? (
-                <p className="mt-2 text-xs text-muted-foreground">{g.notes}</p>
-              ) : null}
-              {g.awarded_by_name ? (
-                <p className="mt-2 text-[10px] text-muted-foreground">
-                  Por {g.awarded_by_name}
-                </p>
-              ) : null}
-            </article>
+          filtered.map((graduation) => (
+            <GraduationHistoryCard
+              key={graduation.id}
+              graduation={graduation}
+            />
           ))
         )}
       </section>
+
+      {canGraduate ? (
+        <NewGraduationSheet
+          members={memberOptions}
+          defaultMemberId={params.member}
+          defaultOpen={openNewSheet}
+        />
+      ) : null}
     </div>
   );
 }

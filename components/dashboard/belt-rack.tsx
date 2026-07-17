@@ -1,29 +1,17 @@
 "use client";
 
 import { useMemo } from "react";
+import { BELT_SWATCH, beltNeedsDarkInk } from "@/lib/belts/colors";
 import { BELT_OPTIONS } from "@/lib/validations/members";
 import { cn } from "@/lib/utils";
 
 export type BeltPoint = { belt: string; count: number };
 
+export { BELT_SWATCH };
+
 const BELT_ORDER = new Map(
   BELT_OPTIONS.map((belt, index) => [belt, index] as const),
 );
-
-export const BELT_SWATCH: Record<string, string> = {
-  Branca: "#f5f5f5",
-  Cinza: "#9ca3af",
-  Amarela: "#eab308",
-  Laranja: "#f97316",
-  Verde: "#22c55e",
-  Azul: "#2563eb",
-  Roxa: "#7c3aed",
-  Marrom: "#92400e",
-  Preta: "#0a0a0a",
-  Coral: "#fb7185",
-  Vermelha: "#e10600",
-  "Sem faixa": "#525252",
-};
 
 function sumCounts(items: { count: number }[]): number {
   return items.reduce((acc, item) => acc + item.count, 0);
@@ -85,7 +73,7 @@ export function BeltRack({ data }: { data: BeltPoint[] }) {
             const pct = (item.count / total) * 100;
             if (pct < 0.5) return null;
             const swatch = BELT_SWATCH[item.belt] ?? "#737373";
-            const needsInk = ["Branca", "Amarela", "Cinza"].includes(item.belt);
+            const needsInk = beltNeedsDarkInk(item.belt);
             return (
               <div
                 key={item.belt}

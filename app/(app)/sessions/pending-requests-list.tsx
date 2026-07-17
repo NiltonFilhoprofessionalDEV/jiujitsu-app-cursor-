@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   approveCheckin,
@@ -15,8 +15,10 @@ const initialState: AttendanceActionState = null;
 
 function PendingRow({
   request,
+  onResolved,
 }: {
   request: PendingAttendanceRequest;
+  onResolved: (id: string) => void;
 }) {
   const [approveState, approveAction, approvePending] = useActionState(
     approveCheckin,
@@ -26,16 +28,25 @@ function PendingRow({
     rejectCheckin,
     initialState,
   );
+  const resolvedRef = useRef(false);
 
   useEffect(() => {
     if (approveState?.error) toast.error(approveState.error);
-    if (approveState?.success) toast.success(approveState.success);
-  }, [approveState]);
+    if (approveState?.success && !resolvedRef.current) {
+      resolvedRef.current = true;
+      toast.success(approveState.success);
+      onResolved(request.id);
+    }
+  }, [approveState, onResolved, request.id]);
 
   useEffect(() => {
     if (rejectState?.error) toast.error(rejectState.error);
-    if (rejectState?.success) toast.success(rejectState.success);
-  }, [rejectState]);
+    if (rejectState?.success && !resolvedRef.current) {
+      resolvedRef.current = true;
+      toast.success(rejectState.success);
+      onResolved(request.id);
+    }
+  }, [rejectState, onResolved, request.id]);
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-3">
@@ -89,27 +100,84 @@ export function PendingRequestsList({
     setRequests(initialRequests);
   }, [initialRequests]);
 
+  const onResolved = useCallback((id: string) => {
+    setRequests((current) => current.filter((row) => row.id !== id));
+  }, []);
+
   useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`attendance-requests-${sessionId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "attendance_requests",
-          filter: `session_id=eq.${sessionId}`,
-        },
-        () => {
-          // Soft refresh: drop resolved rows client-side; full list via revalidate on actions
-          setRequests((current) => current.filter((r) => r.status === "pending"));
-        },
-      )
-      .subscribe();
+    let cancelled = false;
+    let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null =
+      null;
+    let supabase: ReturnType<typeof createClient> | null = null;
+
+    try {
+      supabase = createClient();
+      channel = supabase
+        .channel(`attendance-requests-${sessionId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "attendance_requests",
+            filter: `session_id=eq.${sessionId}`,
+          },
+          (payload) => {
+            if (cancelled) return;
+            const row = payload.new as {
+              id?: string;
+              session_id?: string;
+              student_id?: string;
+              requested_at?: string;
+              status?: string;
+            };
+            if (!row?.id || row.status !== "pending") return;
+            setRequests((current) => {
+              if (current.some((r) => r.id === row.id)) return current;
+              return [
+                ...current,
+                {
+                  id: row.id!,
+                  session_id: row.session_id ?? sessionId,
+                  student_id: row.student_id ?? "",
+                  requested_at: row.requested_at ?? new Date().toISOString(),
+                  status: "pending",
+                  student_name: "Novo pedido",
+                  student_belt: null,
+                },
+              ];
+            });
+          },
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "attendance_requests",
+            filter: `session_id=eq.${sessionId}`,
+          },
+          (payload) => {
+            if (cancelled) return;
+            const row = payload.new as { id?: string; status?: string };
+            if (!row?.id) return;
+            if (row.status && row.status !== "pending") {
+              setRequests((current) =>
+                current.filter((r) => r.id !== row.id),
+              );
+            }
+          },
+        )
+        .subscribe();
+    } catch {
+      // Realtime opcional
+    }
 
     return () => {
-      void supabase.removeChannel(channel);
+      cancelled = true;
+      if (supabase && channel) {
+        void supabase.removeChannel(channel);
+      }
     };
   }, [sessionId]);
 
@@ -124,7 +192,11 @@ export function PendingRequestsList({
   return (
     <div className="space-y-2">
       {requests.map((request) => (
-        <PendingRow key={request.id} request={request} />
+        <PendingRow
+          key={request.id}
+          request={request}
+          onResolved={onResolved}
+        />
       ))}
     </div>
   );

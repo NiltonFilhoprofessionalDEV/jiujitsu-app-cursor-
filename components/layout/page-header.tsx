@@ -1,3 +1,4 @@
+import { HeaderNotificationsBell } from "@/components/layout/header-notifications-bell";
 import { HeaderUserAvatar } from "@/components/layout/header-user-avatar";
 import { cn } from "@/lib/utils";
 
@@ -8,6 +9,7 @@ export async function PageHeader({
   action,
   className,
   showAvatar = true,
+  showNotifications = true,
 }: {
   title: string;
   description?: string;
@@ -15,6 +17,8 @@ export async function PageHeader({
   action?: React.ReactNode;
   className?: string;
   showAvatar?: boolean;
+  /** Bell next to profile photo (default on). */
+  showNotifications?: boolean;
 }) {
   return (
     <header
@@ -36,9 +40,10 @@ export async function PageHeader({
           <p className="text-sm text-[var(--bjj-muted)]">{description}</p>
         ) : null}
       </div>
-      {showAvatar || action ? (
+      {showAvatar || showNotifications || action ? (
         <div className="flex shrink-0 items-center gap-2 pt-0.5">
           {action}
+          {showNotifications ? <HeaderNotificationsBell /> : null}
           {showAvatar ? <HeaderUserAvatar /> : null}
         </div>
       ) : null}

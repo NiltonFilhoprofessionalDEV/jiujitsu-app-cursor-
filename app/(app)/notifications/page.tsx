@@ -4,27 +4,23 @@ import {
   markAllNotificationsRead,
 } from "@/actions/notifications";
 import { PageHeader } from "@/components/layout/page-header";
+import { NotificationCard } from "@/components/notifications/notification-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getActiveMembership } from "@/lib/permissions/assert";
-import { MarkReadButton } from "./mark-read-button";
+import { NotificationsFilterBar } from "./notifications-filter-bar";
 
-function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-export default async function NotificationsPage() {
+export default async function NotificationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; unread?: string }>;
+}) {
   try {
     await getActiveMembership();
   } catch {
     redirect("/select-academy");
   }
+
+  const params = await searchParams;
 
   let notifications;
   try {
@@ -33,10 +29,22 @@ export default async function NotificationsPage() {
     redirect("/select-academy");
   }
 
+  const q = params.q?.trim().toLowerCase() ?? "";
+  const unreadOnly = params.unread === "1";
+
+  const filtered = notifications.filter((n) => {
+    if (unreadOnly && n.is_read) return false;
+    if (!q) return true;
+    return (
+      n.title.toLowerCase().includes(q) ||
+      n.description.toLowerCase().includes(q)
+    );
+  });
+
   const unread = notifications.filter((n) => !n.is_read).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title="Notificações"
         description={
@@ -44,6 +52,7 @@ export default async function NotificationsPage() {
             ? `${unread} não lida${unread > 1 ? "s" : ""}`
             : "Todas lidas"
         }
+        showNotifications={false}
         action={
           unread > 0 ? (
             <form action={markAllNotificationsRead}>
@@ -58,35 +67,36 @@ export default async function NotificationsPage() {
         }
       />
 
+      <NotificationsFilterBar
+        initial={{ q: params.q, unread: params.unread }}
+      />
+
       <section className="space-y-2">
-        {notifications.length === 0 ? (
+        <div className="flex items-end justify-between gap-2 px-0.5">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Inbox
+          </p>
+          <p className="text-[10px] tabular-nums text-muted-foreground">
+            {filtered.length}
+          </p>
+        </div>
+
+        {filtered.length === 0 ? (
           <EmptyState
-            title="Nada novo por enquanto"
-            description="Graduações, presenças e avisos do tatame aparecem aqui."
+            title={
+              q || unreadOnly
+                ? "Nenhuma notificação encontrada"
+                : "Nada novo por enquanto"
+            }
+            description={
+              q || unreadOnly
+                ? "Ajuste a busca ou os filtros."
+                : "Graduações, presenças e avisos do tatame aparecem aqui."
+            }
           />
         ) : (
-          notifications.map((n) => (
-            <article
-              key={n.id}
-              className={`rounded-2xl border p-4 backdrop-blur-xl ${
-                n.is_read
-                  ? "border-border bg-card"
-                  : "border-[var(--accent)]/30 bg-[var(--action-red)]/5"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-semibold text-foreground">{n.title}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {n.description}
-                  </p>
-                  <time className="mt-2 block text-[10px] text-muted-foreground">
-                    {formatDateTime(n.created_at)}
-                  </time>
-                </div>
-                {!n.is_read ? <MarkReadButton id={n.id} /> : null}
-              </div>
-            </article>
+          filtered.map((n) => (
+            <NotificationCard key={n.id} notification={n} />
           ))
         )}
       </section>

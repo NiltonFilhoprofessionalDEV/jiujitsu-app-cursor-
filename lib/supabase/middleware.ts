@@ -6,6 +6,7 @@ const PROTECTED_PREFIXES = [
   "/classes",
   "/checkin",
   "/stats",
+  "/journey",
   "/menu",
   "/members",
   "/sessions",
@@ -17,9 +18,16 @@ const PROTECTED_PREFIXES = [
   "/profile",
   "/create-academy",
   "/select-academy",
+  "/waiting-academy",
+  "/admin",
 ] as const;
 
-const PUBLIC_PREFIXES = ["/login", "/signup", "/invite"] as const;
+const PUBLIC_PREFIXES = [
+  "/login",
+  "/signup",
+  "/invite",
+  "/owner-invite",
+] as const;
 
 function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some(

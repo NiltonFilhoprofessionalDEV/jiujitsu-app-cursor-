@@ -1,17 +1,19 @@
 import Link from "next/link";
-import { Bell } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getDashboardData } from "@/actions/dashboard";
 import {
+  CheckinQueueCard,
   MetricGlassCard,
+  NextClassCard,
+  NowOnMatBoard,
   QuickActions,
   RecentList,
 } from "@/components/dashboard/home-widgets";
 import { PageHeader } from "@/components/layout/page-header";
 import { getActiveAcademyBrief } from "@/lib/academy/active";
+import { defaultAppHomePath } from "@/lib/journey/nav";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
-import { createClient } from "@/lib/supabase/server";
 
 function formatDateTime(iso: string): string {
   const d = new Date(iso);
@@ -30,23 +32,6 @@ function formatDate(value: string): string {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
-function NotificationsButton({ unreadCount }: { unreadCount: number }) {
-  return (
-    <Link
-      href="/notifications"
-      className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition hover:bg-muted"
-      aria-label="Notificações"
-    >
-      <Bell className="h-5 w-5" />
-      {unreadCount > 0 ? (
-        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--action-red)] px-1 text-[10px] font-bold text-primary-foreground">
-          {unreadCount > 9 ? "9+" : unreadCount}
-        </span>
-      ) : null}
-    </Link>
-  );
-}
-
 export default async function HomePage() {
   let membership;
   let academy;
@@ -57,26 +42,23 @@ export default async function HomePage() {
     redirect("/select-academy");
   }
 
-  const supabase = await createClient();
-  const { count: unreadCount } = await supabase
-    .from("notifications")
-    .select("id", { count: "exact", head: true })
-    .eq("profile_id", membership.profile_id)
-    .eq("is_read", false);
-
-  const unread = unreadCount ?? 0;
+  if (
+    can(membership.role, "view_own_journey") &&
+    !can(membership.role, "view_teaching_journey")
+  ) {
+    redirect(defaultAppHomePath(membership.role));
+  }
 
   if (!can(membership.role, "view_dashboard")) {
     return (
       <div className="space-y-6">
         <PageHeader
-          eyebrow="BJJ Manager"
+          eyebrow="BJJ Pulse"
           title={academy.name}
           description="Faça check-in e acompanhe avisos do tatame"
-          action={<NotificationsButton unreadCount={unread} />}
         />
 
-        <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-[var(--surface-shadow)] backdrop-blur-xl">
+        <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-[var(--surface-shadow)]">
           <p className="text-sm text-muted-foreground">
             Sem dashboard de gestão neste papel. Vá direto ao check-in ou aos
             avisos.
@@ -86,7 +68,7 @@ export default async function HomePage() {
               href="/checkin"
               className="inline-flex h-11 items-center justify-center rounded-lg bg-primary text-sm font-medium text-primary-foreground"
             >
-              Check-in
+              Fila de presença
             </Link>
             <Link
               href="/announcements"
@@ -107,17 +89,35 @@ export default async function HomePage() {
     redirect("/select-academy");
   }
 
+  const firstPendingSession =
+    data.openSessions.find((s) => s.pendingCount > 0)?.id ??
+    data.openSessions[0]?.id ??
+    null;
+
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="BJJ Manager"
+        eyebrow="BJJ Pulse"
         title={academy.name}
-        description="Métricas e atalhos do tatame"
-        action={<NotificationsButton unreadCount={unread} />}
+        description="Comando do dia no tatame"
+      />
+
+      <NowOnMatBoard sessions={data.openSessions} />
+
+      <CheckinQueueCard
+        pendingCount={data.pendingApprovals}
+        firstSessionId={firstPendingSession}
+      />
+
+      <NextClassCard next={data.nextClass} />
+
+      <QuickActions
+        canGraduate={can(membership.role, "graduate")}
+        canAnnounce={can(membership.role, "manage_announcements")}
+        canAddVideo={can(membership.role, "manage_virtual_lessons")}
       />
 
       <MetricGlassCard metrics={data.metrics} />
-      <QuickActions />
 
       <RecentList
         title="Presenças recentes"

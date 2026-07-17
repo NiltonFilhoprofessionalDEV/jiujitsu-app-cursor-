@@ -201,6 +201,7 @@ export async function createGraduation(
     revalidatePath("/members");
     revalidatePath(`/members/${target.id}`);
     revalidatePath("/home");
+    revalidatePath("/journey");
     return { success: "Graduação registrada com sucesso." };
   } catch (err) {
     if (err instanceof PermissionError) {

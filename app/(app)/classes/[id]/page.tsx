@@ -7,15 +7,56 @@ import {
 import {
   getClass,
   listAutoOpenInstructors,
+  listClasses,
+  listScheduleDayOverrides,
+  type ScheduleDayOverrideRow,
 } from "@/actions/classes";
+import { resolveTimezone } from "@/lib/sessions/auto-open";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
-import { ClassAutoInstructorForm } from "../class-auto-instructor-form";
-import { ClassSchedulesManager } from "../class-schedules-manager";
+import { createClient } from "@/lib/supabase/server";
+import { ClassAutomationPanel } from "../class-automation-panel";
+import { ClassDayOverrides } from "../class-day-overrides";
+import { ClassRequirementsCard } from "../class-requirements-card";
+import { ClassScheduleBoard } from "../class-schedule-board";
 import { OpenSessionButton } from "../open-session-button";
 import { ClassRoster } from "./class-roster";
 
 type Params = Promise<{ id: string }>;
+
+async function resolveClassTimezone(input: {
+  academyId: string;
+  unitId: string | null;
+}): Promise<string> {
+  const supabase = await createClient();
+  const { data: academy } = await supabase
+    .from("academies")
+    .select("timezone")
+    .eq("id", input.academyId)
+    .maybeSingle();
+
+  let unitTimezone: string | null = null;
+  if (input.unitId) {
+    const { data: unit } = await supabase
+      .from("academy_units")
+      .select("timezone")
+      .eq("id", input.unitId)
+      .maybeSingle();
+    unitTimezone = (unit?.timezone as string | null) ?? null;
+  }
+
+  return resolveTimezone(unitTimezone, academy?.timezone as string | null);
+}
+
+async function safeListOverrides(
+  classId: string,
+): Promise<ScheduleDayOverrideRow[]> {
+  try {
+    return await listScheduleDayOverrides(classId);
+  } catch {
+    return [];
+  }
+}
 
 export default async function ClassDetailPage({
   params,
@@ -30,6 +71,10 @@ export default async function ClassDetailPage({
   }
 
   const { id } = await params;
+
+  if (membership.role === "student") {
+    redirect("/classes");
+  }
 
   let klass;
   try {
@@ -48,16 +93,30 @@ export default async function ClassDetailPage({
     can(membership.role, "open_session");
   const canOpen = can(membership.role, "open_session") && klass.is_active;
 
-  const instructors = canConfigureAuto
-    ? await listAutoOpenInstructors()
-    : [];
+  const [instructors, overrides, siblings, timeZone, rosterData] =
+    await Promise.all([
+      canConfigureAuto ? listAutoOpenInstructors() : Promise.resolve([]),
+      canConfigureAuto ? safeListOverrides(klass.id) : Promise.resolve([]),
+      canManage ? listClasses() : Promise.resolve([]),
+      resolveClassTimezone({
+        academyId: klass.academy_id,
+        unitId: klass.unit_id,
+      }),
+      canManage
+        ? Promise.all([
+            listClassMembers(klass.id),
+            listAcademyStudentsForRoster(),
+          ])
+        : Promise.resolve(null),
+    ]);
 
-  const rosterData = canManage
-    ? await Promise.all([
-        listClassMembers(klass.id),
-        listAcademyStudentsForRoster(),
-      ])
-    : null;
+  const siblingOptions = siblings
+    .filter((row) => row.id !== klass.id)
+    .map((row) => ({
+      id: row.id,
+      name: row.name,
+      scheduleCount: row.schedules?.length ?? 0,
+    }));
 
   return (
     <div className="space-y-6">
@@ -91,51 +150,55 @@ export default async function ClassDetailPage({
         </div>
       </header>
 
-      {(klass.minimum_age != null ||
-        klass.maximum_age != null ||
-        klass.minimum_belt ||
-        klass.maximum_belt) && (
-        <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground backdrop-blur-xl">
-          {klass.minimum_age != null || klass.maximum_age != null ? (
-            <p>
-              Idade:{" "}
-              {klass.minimum_age != null ? `${klass.minimum_age}` : "—"}
-              {" – "}
-              {klass.maximum_age != null ? `${klass.maximum_age}` : "—"}
-            </p>
-          ) : null}
-          {klass.minimum_belt || klass.maximum_belt ? (
-            <p className="mt-1">
-              Faixa: {klass.minimum_belt ?? "qualquer"} –{" "}
-              {klass.maximum_belt ?? "qualquer"}
-            </p>
-          ) : null}
-        </div>
-      )}
+      <ClassRequirementsCard
+        minimumAge={klass.minimum_age}
+        maximumAge={klass.maximum_age}
+        minimumBelt={klass.minimum_belt}
+        maximumBelt={klass.maximum_belt}
+      />
 
       {canOpen ? <OpenSessionButton classId={klass.id} /> : null}
 
-      {canConfigureAuto ? (
-        <ClassAutoInstructorForm
+      <section className="space-y-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--surface-shadow)] backdrop-blur-xl">
+        <div>
+          <h2 className="font-display text-lg tracking-[0.1em] text-foreground">
+            Horários
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {canManage
+              ? "Quando a turma treina. Os alunos veem essa grade em Turmas."
+              : "Grade semanal desta turma."}
+          </p>
+        </div>
+        <ClassScheduleBoard
           classId={klass.id}
+          schedules={klass.schedules ?? []}
+          canManage={canManage}
+          siblingClasses={siblingOptions}
+        />
+      </section>
+
+      {canConfigureAuto ? (
+        <ClassAutomationPanel
+          classId={klass.id}
+          schedules={klass.schedules ?? []}
           defaultInstructorId={klass.default_instructor_id}
+          instructors={instructors}
+          canConfigure={canConfigureAuto}
+          timeZone={timeZone}
+          overrides={overrides}
+        />
+      ) : null}
+
+      {canConfigureAuto ? (
+        <ClassDayOverrides
+          classId={klass.id}
+          schedules={klass.schedules ?? []}
+          overrides={overrides}
           instructors={instructors}
           canConfigure={canConfigureAuto}
         />
       ) : null}
-
-      <section className="space-y-3 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl">
-        <h2 className="text-sm font-semibold text-foreground">
-          Horários semanais
-        </h2>
-        <ClassSchedulesManager
-          classId={klass.id}
-          schedules={klass.schedules ?? []}
-          canManage={canManage}
-          canConfigureAuto={canConfigureAuto}
-          hasDefaultInstructor={Boolean(klass.default_instructor_id)}
-        />
-      </section>
 
       {rosterData ? (
         <section className="space-y-3 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl">

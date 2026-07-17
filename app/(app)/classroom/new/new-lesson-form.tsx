@@ -59,6 +59,22 @@ export function NewLessonForm({ classes }: { classes: ClassOption[] }) {
       </div>
 
       <div className="space-y-2">
+        <Label htmlFor="category">Categoria / posição *</Label>
+        <select
+          id="category"
+          name="category"
+          required
+          defaultValue="guarda"
+          className={selectClassName}
+        >
+          <option value="guarda">Guarda</option>
+          <option value="passagem">Passagem</option>
+          <option value="finalizacao">Finalização</option>
+          <option value="defesa">Defesa</option>
+        </select>
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="orientation">Orientação</Label>
         <select
           id="orientation"

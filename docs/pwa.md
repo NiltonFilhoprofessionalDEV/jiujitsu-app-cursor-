@@ -2,7 +2,7 @@
 
 O MVP inclui:
 
-- `app/manifest.ts` — nome **BJJ Manager**, `display: standalone`, `theme_color: #070b16`
+- `app/manifest.ts` — nome **BJJ Pulse**, `display: standalone`, `theme_color: #070b16`
 - Ícones em `public/icons/`
 - `@ducanh2912/next-pwa` em `next.config.ts` (desabilitado em `development`)
 

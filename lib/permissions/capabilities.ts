@@ -16,6 +16,8 @@ const matrix: Record<MemberRole, Capability[]> = {
     "view_announcements",
     "manage_virtual_lessons",
     "view_virtual_lessons",
+    "view_own_journey",
+    "view_teaching_journey",
   ],
   administrator: [
     "view_dashboard",
@@ -31,6 +33,8 @@ const matrix: Record<MemberRole, Capability[]> = {
     "view_announcements",
     "manage_virtual_lessons",
     "view_virtual_lessons",
+    "view_own_journey",
+    "view_teaching_journey",
   ],
   instructor: [
     "view_dashboard",
@@ -46,15 +50,25 @@ const matrix: Record<MemberRole, Capability[]> = {
     "view_announcements",
     "manage_virtual_lessons",
     "view_virtual_lessons",
+    "view_own_journey",
+    "view_teaching_journey",
   ],
   assistant_instructor: [
     "view_members",
     "open_session",
+    "approve_attendance",
     "manual_attendance",
     "view_announcements",
     "view_virtual_lessons",
+    "view_own_journey",
+    "view_teaching_journey",
   ],
-  student: ["self_checkin", "view_announcements", "view_virtual_lessons"],
+  student: [
+    "self_checkin",
+    "view_announcements",
+    "view_virtual_lessons",
+    "view_own_journey",
+  ],
   guardian: ["view_announcements", "view_members", "view_virtual_lessons"],
 };
 

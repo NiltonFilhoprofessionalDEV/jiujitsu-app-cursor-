@@ -1,23 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { listMembers } from "@/actions/members";
+import { PageCreateFab } from "@/components/layout/page-create-fab";
 import { PageHeader } from "@/components/layout/page-header";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
-import { BELT_OPTIONS } from "@/lib/validations/members";
-import {
-  ROLE_LABELS,
-  ROLE_OPTIONS,
-  STATUS_LABELS,
-  STATUS_OPTIONS,
-  selectClassName,
-} from "./labels";
-import { CreateInviteForm } from "./create-invite-form";
+import { MemberListCard } from "./member-list-card";
+import { MembersFilterBar } from "./members-filter-bar";
+import { MembersInvitePanel } from "./members-invite-panel";
 
 type SearchParams = Promise<{
   role?: string;
   status?: string;
   belt?: string;
+  q?: string;
 }>;
 
 export default async function MembersPage({
@@ -42,155 +38,76 @@ export default async function MembersPage({
   const params = await searchParams;
   const canManage = can(membership.role, "manage_members");
 
+  const statusParam = params.status;
+  const statusFilter =
+    statusParam === "all"
+      ? undefined
+      : statusParam === undefined || statusParam === ""
+        ? "active"
+        : statusParam;
+
   let members;
   try {
     members = await listMembers({
       role: params.role,
-      status: params.status,
+      status: statusFilter,
       belt: params.belt,
+      q: params.q,
     });
   } catch {
     redirect("/select-academy");
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title="Membros"
         description="Alunos e equipe da academia"
-        action={
-          canManage ? (
-            <Link
-              href="/members/new"
-              className="inline-flex h-10 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Vincular
-            </Link>
-          ) : undefined
-        }
       />
 
-      {canManage ? <CreateInviteForm /> : null}
+      <MembersFilterBar
+        initial={{
+          q: params.q,
+          role: params.role,
+          status: statusParam ?? "active",
+          belt: params.belt,
+        }}
+      />
 
-      <form
-        className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-card p-3 backdrop-blur-xl"
-        method="get"
-      >
-        <div className="space-y-1">
-          <label htmlFor="role" className="text-[10px] text-muted-foreground">
-            Papel
-          </label>
-          <select
-            id="role"
-            name="role"
-            defaultValue={params.role ?? ""}
-            className={selectClassName}
-          >
-            <option value="">Todos</option>
-            {ROLE_OPTIONS.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1">
-          <label htmlFor="status" className="text-[10px] text-muted-foreground">
-            Status
-          </label>
-          <select
-            id="status"
-            name="status"
-            defaultValue={params.status ?? ""}
-            className={selectClassName}
-          >
-            <option value="">Todos</option>
-            {STATUS_OPTIONS.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1">
-          <label htmlFor="belt" className="text-[10px] text-muted-foreground">
-            Faixa
-          </label>
-          <select
-            id="belt"
-            name="belt"
-            defaultValue={params.belt ?? ""}
-            className={selectClassName}
-          >
-            <option value="">Todas</option>
-            {BELT_OPTIONS.map((belt) => (
-              <option key={belt} value={belt}>
-                {belt}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button
-          type="submit"
-          className="col-span-3 mt-1 h-10 rounded-lg border border-border bg-card text-sm font-medium text-foreground hover:bg-muted"
-        >
-          Filtrar
-        </button>
-      </form>
+      {canManage ? <MembersInvitePanel /> : null}
 
       <div className="space-y-2">
+        <div className="flex items-end justify-between gap-2 px-0.5">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Resultados
+          </p>
+          <p className="text-[10px] tabular-nums text-muted-foreground">
+            {members.length}
+          </p>
+        </div>
+
         {members.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card p-6 text-center backdrop-blur-xl">
+          <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-center shadow-[var(--surface-shadow)]">
             <p className="text-sm text-muted-foreground">
               Nenhum membro encontrado com esses filtros.
             </p>
             {canManage ? (
               <Link
                 href="/members/new"
-                className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-lg bg-[var(--page-fab-bg)] text-sm font-medium text-[var(--page-fab-fg)] hover:brightness-110"
               >
-                Vincular por e-mail
+                Novo membro
               </Link>
             ) : null}
           </div>
         ) : (
           members.map((member) => (
-            <Link
-              key={member.id}
-              href={`/members/${member.id}`}
-              className="block rounded-2xl border border-border bg-card p-4 transition hover:bg-muted backdrop-blur-xl"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-foreground">
-                    {member.profile.name}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {member.profile.email}
-                  </p>
-                </div>
-                <span
-                  className={
-                    member.status === "active"
-                      ? "shrink-0 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-400"
-                      : member.status === "suspended"
-                        ? "shrink-0 rounded-md bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-400"
-                        : "shrink-0 rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
-                  }
-                >
-                  {STATUS_LABELS[member.status]}
-                </span>
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {ROLE_LABELS[member.role]}
-                {member.current_belt
-                  ? ` · ${member.current_belt}${member.current_degree > 0 ? ` ${member.current_degree}º` : ""}`
-                  : ""}
-              </p>
-            </Link>
+            <MemberListCard key={member.id} member={member} />
           ))
         )}
       </div>
+
+      {canManage ? <PageCreateFab href="/members/new" label="Novo" /> : null}
     </div>
   );
 }

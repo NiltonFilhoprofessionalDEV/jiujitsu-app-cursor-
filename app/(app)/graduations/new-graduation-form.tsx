@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   createGraduation,
@@ -9,6 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BeltPill } from "@/components/belts/belt-pill";
+import { suggestNextGraduation } from "@/lib/graduations/suggest-next";
 import { BELT_OPTIONS } from "@/lib/validations/members";
 
 const selectClassName =
@@ -25,18 +27,56 @@ export type GraduationMemberOption = {
 
 export function NewGraduationForm({
   members,
+  defaultMemberId,
+  onSuccess,
 }: {
   members: GraduationMemberOption[];
+  defaultMemberId?: string;
+  onSuccess?: () => void;
 }) {
   const [state, formAction, pending] = useActionState(
     createGraduation,
     initialState,
   );
 
+  const initialMember =
+    members.find((m) => m.id === defaultMemberId) ?? members[0] ?? null;
+
+  const [memberId, setMemberId] = useState(initialMember?.id ?? "");
+
+  const selected = useMemo(
+    () => members.find((m) => m.id === memberId) ?? null,
+    [members, memberId],
+  );
+
+  const suggested = useMemo(
+    () =>
+      suggestNextGraduation(
+        selected?.current_belt,
+        selected?.current_degree ?? 0,
+      ),
+    [selected],
+  );
+
+  const [belt, setBelt] = useState(suggested.belt);
+  const [degree, setDegree] = useState(String(suggested.degree));
+
+  useEffect(() => {
+    const next = suggestNextGraduation(
+      selected?.current_belt,
+      selected?.current_degree ?? 0,
+    );
+    setBelt(next.belt);
+    setDegree(String(next.degree));
+  }, [selected?.id, selected?.current_belt, selected?.current_degree]);
+
   useEffect(() => {
     if (state?.error) toast.error(state.error);
-    if (state?.success) toast.success(state.success);
-  }, [state]);
+    if (state?.success) {
+      toast.success(state.success);
+      onSuccess?.();
+    }
+  }, [state, onSuccess]);
 
   if (members.length === 0) {
     return (
@@ -54,12 +94,10 @@ export function NewGraduationForm({
           id="member_id"
           name="member_id"
           required
-          defaultValue=""
+          value={memberId}
+          onChange={(e) => setMemberId(e.target.value)}
           className={selectClassName}
         >
-          <option value="" disabled>
-            Selecione
-          </option>
           {members.map((m) => (
             <option key={m.id} value={m.id}>
               {m.name}
@@ -71,6 +109,27 @@ export function NewGraduationForm({
         </select>
       </div>
 
+      {selected ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-[var(--grad-accent-wash)] px-3 py-2.5">
+          <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Atual
+          </span>
+          {selected.current_belt ? (
+            <BeltPill
+              belt={selected.current_belt}
+              degree={selected.current_degree}
+            />
+          ) : (
+            <span className="text-xs text-muted-foreground">Sem faixa</span>
+          )}
+          <span className="text-xs text-[var(--grad-from-muted)]">→</span>
+          <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Sugerido
+          </span>
+          <BeltPill belt={belt} degree={Number(degree) || 0} />
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="belt">Faixa *</Label>
@@ -78,12 +137,13 @@ export function NewGraduationForm({
             id="belt"
             name="belt"
             required
-            defaultValue="Branca"
+            value={belt}
+            onChange={(e) => setBelt(e.target.value)}
             className={selectClassName}
           >
-            {BELT_OPTIONS.map((belt) => (
-              <option key={belt} value={belt}>
-                {belt}
+            {BELT_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
               </option>
             ))}
           </select>
@@ -96,7 +156,8 @@ export function NewGraduationForm({
             type="number"
             min={0}
             max={10}
-            defaultValue={0}
+            value={degree}
+            onChange={(e) => setDegree(e.target.value)}
             required
             className="h-11"
           />
@@ -123,7 +184,11 @@ export function NewGraduationForm({
         />
       </div>
 
-      <Button type="submit" className="h-11 w-full" disabled={pending}>
+      <Button
+        type="submit"
+        className="h-11 w-full bg-[var(--page-fab-bg)] text-[var(--page-fab-fg)]"
+        disabled={pending}
+      >
         {pending ? "Registrando…" : "Registrar graduação"}
       </Button>
     </form>

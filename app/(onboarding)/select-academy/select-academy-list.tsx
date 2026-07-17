@@ -20,7 +20,13 @@ const roleLabels: Record<MyAcademy["role"], string> = {
   guardian: "Responsável",
 };
 
-export function SelectAcademyList({ academies }: { academies: MyAcademy[] }) {
+export function SelectAcademyList({
+  academies,
+  canCreate = false,
+}: {
+  academies: MyAcademy[];
+  canCreate?: boolean;
+}) {
   const [state, formAction, pending] = useActionState(
     selectAcademyFromForm,
     initialState,
@@ -42,12 +48,21 @@ export function SelectAcademyList({ academies }: { academies: MyAcademy[] }) {
           <p className="text-sm text-muted-foreground">
             Nenhuma academia encontrada.
           </p>
-          <Link
-            href="/create-academy"
-            className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            Criar academia
-          </Link>
+          {canCreate ? (
+            <Link
+              href="/create-academy"
+              className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Criar academia
+            </Link>
+          ) : (
+            <Link
+              href="/waiting-academy"
+              className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted"
+            >
+              Preciso de um convite
+            </Link>
+          )}
         </div>
       ) : (
         academies.map((academy) => (

@@ -102,22 +102,11 @@ export async function runAutoSessions(
         result.skipped += 1;
         continue;
       }
-      if (!klass.default_instructor_id) {
-        result.skipped += 1;
-        continue;
-      }
 
       const academy = one(klass.academies);
       const unit = one(klass.academy_units);
       const timeZone = resolveTimezone(unit?.timezone, academy?.timezone);
       const parts = zonedParts(now, timeZone);
-
-      const { data: instructor } = await supabase
-        .from("academy_members")
-        .select("id, status, role")
-        .eq("id", klass.default_instructor_id)
-        .eq("academy_id", klass.academy_id)
-        .maybeSingle();
 
       const eligibleRoles = new Set([
         "owner",
@@ -125,15 +114,6 @@ export async function runAutoSessions(
         "instructor",
         "assistant_instructor",
       ]);
-
-      if (
-        !instructor ||
-        instructor.status !== "active" ||
-        !eligibleRoles.has(instructor.role as string)
-      ) {
-        result.skipped += 1;
-        continue;
-      }
 
       const dueOpen = shouldAutoOpen({
         now,
@@ -145,6 +125,43 @@ export async function runAutoSessions(
       });
 
       if (dueOpen) {
+        const { data: dayOverride } = await supabase
+          .from("class_schedule_day_overrides")
+          .select("cancelled, substitute_instructor_id")
+          .eq("schedule_id", raw.id)
+          .eq("date", parts.dateStr)
+          .maybeSingle();
+
+        if (dayOverride?.cancelled) {
+          result.skipped += 1;
+          continue;
+        }
+
+        const instructorId =
+          dayOverride?.substitute_instructor_id ??
+          klass.default_instructor_id;
+
+        if (!instructorId) {
+          result.skipped += 1;
+          continue;
+        }
+
+        const { data: instructor } = await supabase
+          .from("academy_members")
+          .select("id, status, role")
+          .eq("id", instructorId)
+          .eq("academy_id", klass.academy_id)
+          .maybeSingle();
+
+        if (
+          !instructor ||
+          instructor.status !== "active" ||
+          !eligibleRoles.has(instructor.role as string)
+        ) {
+          result.skipped += 1;
+          continue;
+        }
+
         const { data: existing } = await supabase
           .from("class_sessions")
           .select("id")
@@ -159,7 +176,7 @@ export async function runAutoSessions(
             .from("class_sessions")
             .insert({
               class_id: klass.id,
-              instructor_id: klass.default_instructor_id,
+              instructor_id: instructorId,
               schedule_id: raw.id,
               date: parts.dateStr,
               started_at: now.toISOString(),

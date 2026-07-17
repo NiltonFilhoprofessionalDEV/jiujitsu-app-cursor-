@@ -1,5 +1,11 @@
 import { z } from "zod";
 import { extractYoutubeId } from "@/lib/youtube/parse";
+import { LESSON_CATEGORIES } from "@/lib/classroom/categories";
+
+const categoryValues = LESSON_CATEGORIES.map((c) => c.value) as [
+  (typeof LESSON_CATEGORIES)[number]["value"],
+  ...(typeof LESSON_CATEGORIES)[number]["value"][],
+];
 
 const uuidOrEmpty = z
   .string()
@@ -32,6 +38,9 @@ export const createVirtualLessonSchema = z
       message: "Visibilidade inválida",
     }),
     class_id: uuidOrEmpty,
+    category: z.enum(categoryValues, {
+      message: "Categoria inválida",
+    }),
   })
   .superRefine((data, ctx) => {
     const videoId = extractYoutubeId(data.youtube_url);
@@ -59,6 +68,15 @@ export const createVirtualLessonSchema = z
       class_id: data.class_id ?? null,
     };
   });
+
+export const createLessonCommentSchema = z.object({
+  lesson_id: z.string().uuid(),
+  body: z
+    .string()
+    .trim()
+    .min(1, "Escreva um comentário")
+    .max(1000, "Comentário muito longo"),
+});
 
 export type CreateVirtualLessonInput = z.infer<
   typeof createVirtualLessonSchema

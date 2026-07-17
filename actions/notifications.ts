@@ -82,7 +82,10 @@ export async function markNotificationRead(
     }
 
     revalidatePath("/notifications");
+    revalidatePath("/menu");
+    revalidatePath("/journey");
     revalidatePath("/home");
+    revalidatePath("/", "layout");
     return { success: "Marcada como lida." };
   } catch (err) {
     if (err instanceof PermissionError) {
@@ -111,5 +114,8 @@ export async function markAllNotificationsRead(): Promise<void> {
   }
 
   revalidatePath("/notifications");
+  revalidatePath("/menu");
+  revalidatePath("/journey");
   revalidatePath("/home");
+  revalidatePath("/", "layout");
 }

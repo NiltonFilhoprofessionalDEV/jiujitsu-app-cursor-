@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import {
   assertCapability,
   getActiveMembership,
@@ -12,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 export type SessionActionState = {
   error?: string;
   success?: string;
+  redirectTo?: string;
 } | null;
 
 export type ClassSessionRow = {
@@ -81,7 +81,11 @@ export async function openSession(
 
     if (existingOpen) {
       revalidatePath(`/classes/${classId}`);
-      redirect(`/sessions/${existingOpen.id}`);
+      revalidatePath("/checkin");
+      return {
+        success: "Aula já estava aberta.",
+        redirectTo: `/sessions/${existingOpen.id}`,
+      };
     }
 
     const now = new Date().toISOString();
@@ -104,12 +108,18 @@ export async function openSession(
     revalidatePath("/classes");
     revalidatePath(`/classes/${classId}`);
     revalidatePath("/checkin");
-    redirect(`/sessions/${session.id}`);
+    return {
+      success: "Aula aberta.",
+      redirectTo: `/sessions/${session.id}`,
+    };
   } catch (err) {
     if (err instanceof PermissionError) {
       return { error: "Sem permissão para abrir aula." };
     }
-    throw err;
+    return {
+      error:
+        err instanceof Error ? err.message : "Não foi possível abrir a aula.",
+    };
   }
 }
 
@@ -132,6 +142,7 @@ export async function closeSession(
         id,
         class_id,
         status,
+        instructor_id,
         classes!inner(academy_id)
       `,
       )
@@ -171,9 +182,28 @@ export async function closeSession(
       return { error: error.message };
     }
 
+    const instructorId = session.instructor_id as string;
+    const { data: instructor } = await supabase
+      .from("academy_members")
+      .select("id, profile_id")
+      .eq("id", instructorId)
+      .maybeSingle();
+
+    if (instructor?.profile_id) {
+      const { unlockAchievementsIfNeeded } = await import("@/actions/journey");
+      await unlockAchievementsIfNeeded({
+        academyId: actor.academy_id,
+        memberId: instructor.id,
+        profileId: instructor.profile_id,
+        track: "teaching",
+      });
+    }
+
     revalidatePath(`/sessions/${sessionId}`);
     revalidatePath(`/classes/${session.class_id}`);
     revalidatePath("/checkin");
+    revalidatePath("/journey");
+    revalidatePath("/notifications");
     return { success: "Aula encerrada." };
   } catch (err) {
     if (err instanceof PermissionError) {
@@ -242,7 +272,18 @@ export async function listOpenSessions(): Promise<ClassSessionRow[]> {
   const member = await getActiveMembership();
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  let enrolledClassIds: string[] | null = null;
+  if (member.role === "student") {
+    const { data: roster, error: rosterError } = await supabase
+      .from("class_members")
+      .select("class_id")
+      .eq("member_id", member.id);
+    if (rosterError) throw rosterError;
+    enrolledClassIds = (roster ?? []).map((row) => row.class_id as string);
+    if (enrolledClassIds.length === 0) return [];
+  }
+
+  let query = supabase
     .from("class_sessions")
     .select(
       `
@@ -258,6 +299,12 @@ export async function listOpenSessions(): Promise<ClassSessionRow[]> {
     )
     .eq("status", "open")
     .order("started_at", { ascending: false });
+
+  if (enrolledClassIds) {
+    query = query.in("class_id", enrolledClassIds);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;

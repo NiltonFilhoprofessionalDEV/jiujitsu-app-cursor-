@@ -2,38 +2,42 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, CalendarDays, BarChart3, Menu, ScanLine } from "lucide-react";
+import { NAV_ICONS, type AppNavItem } from "@/components/layout/nav-items";
+import { UnreadDot } from "@/components/layout/unread-dot";
 import { cn } from "@/lib/utils";
 
-const items = [
-  { href: "/home", label: "Home", icon: Home },
-  { href: "/classes", label: "Turmas", icon: CalendarDays },
-  { href: "/checkin", label: "Check-in", icon: ScanLine, fab: true },
-  { href: "/stats", label: "Stats", icon: BarChart3 },
-  { href: "/menu", label: "Menu", icon: Menu },
-];
-
-export function BottomNav() {
+export function BottomNav({
+  items,
+  menuHasUnread = false,
+}: {
+  items: AppNavItem[];
+  menuHasUnread?: boolean;
+}) {
   const pathname = usePathname();
+  const gridColsClass = items.length === 4 ? "grid-cols-4" : "grid-cols-5";
+
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-50 mx-auto max-w-lg border-t border-border pb-[env(safe-area-inset-bottom)] backdrop-blur-md"
+      className="fixed bottom-0 inset-x-0 z-50 mx-auto max-w-lg overflow-visible border-t border-border pb-[env(safe-area-inset-bottom)] lg:hidden"
       style={{ background: "var(--nav-bg)" }}
+      aria-label="Navegação principal"
     >
-      <ul className="grid grid-cols-5 items-end px-2 pt-2 pb-2">
-        {items.map(({ href, label, icon: Icon, fab }) => {
+      <ul className={cn("grid items-end px-2 pt-2 pb-2", gridColsClass)}>
+        {items.map(({ href, label, icon, fab }) => {
+          const Icon = NAV_ICONS[icon];
           const active = pathname.startsWith(href);
           if (fab) {
             return (
               <li key={href} className="relative flex justify-center">
                 <Link
                   href={href}
+                  prefetch={false}
                   className="group -mt-8 flex flex-col items-center gap-1"
                   aria-label={label}
                 >
                   <span
                     className={cn(
-                      "relative flex h-16 w-16 items-center justify-center rounded-full",
+                      "relative z-10 flex h-16 w-16 items-center justify-center rounded-full",
                       "bg-gradient-to-b from-[#ff3b30] to-[var(--action-red)]",
                       "text-white",
                       "ring-4",
@@ -41,9 +45,7 @@ export function BottomNav() {
                       active && "scale-[1.02]",
                     )}
                     style={{
-                      boxShadow: `0 0 28px var(--fab-glow), 0 10px 18px rgba(0,0,0,0.35)`,
-                      // ring color follows theme surface
-                      outlineColor: "var(--nav-ring)",
+                      boxShadow: `0 8px 20px rgba(0,0,0,0.35), 0 0 18px var(--fab-glow)`,
                     }}
                   >
                     <span
@@ -67,18 +69,25 @@ export function BottomNav() {
               </li>
             );
           }
+          const showMenuDot = href === "/menu" && menuHasUnread;
           return (
             <li key={href}>
               <Link
                 href={href}
                 className={cn(
-                  "flex flex-col items-center gap-1 pb-0.5 text-[10px] tracking-wide",
+                  "relative flex min-h-11 flex-col items-center justify-center gap-1 pb-0.5 text-[10px] tracking-wide",
                   active
                     ? "text-[var(--action-red)]"
                     : "text-muted-foreground",
                 )}
+                aria-label={
+                  showMenuDot ? `${label}, novidades não lidas` : label
+                }
               >
-                <Icon className="h-5 w-5" />
+                <span className="relative inline-flex">
+                  <Icon className="h-5 w-5" />
+                  <UnreadDot show={showMenuDot} className="-right-1 -top-0.5" />
+                </span>
                 <span className={active ? "font-semibold" : undefined}>
                   {label}
                 </span>

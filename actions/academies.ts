@@ -3,19 +3,22 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { setActiveAcademyId } from "@/lib/academy/context";
+import { defaultAppHomePath } from "@/lib/journey/nav";
 import {
   assertCapability,
   getActiveMembership,
   PermissionError,
 } from "@/lib/permissions/assert";
+import { isPlatformAdminEmail } from "@/lib/platform-admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import type { MemberRole } from "@/types/domain";
 import {
   createAcademySchema,
   createUnitSchema,
   updateAcademySchema,
   updateUnitSchema,
 } from "@/lib/validations/academy";
-import type { MemberRole } from "@/types/domain";
 
 export type AcademyActionState = {
   error?: string;
@@ -107,6 +110,41 @@ export async function createAcademy(
     return { error: "Faça login para criar uma academia." };
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("can_create_academy")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile?.can_create_academy) {
+    if (isPlatformAdminEmail(user.email)) {
+      try {
+        const admin = createAdminClient();
+        const { error: grantError } = await admin
+          .from("profiles")
+          .update({
+            can_create_academy: true,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id);
+        if (grantError) {
+          return {
+            error:
+              "Sem permissão para criar academia. Use um convite de dono.",
+          };
+        }
+      } catch {
+        return {
+          error: "Sem permissão para criar academia. Use um convite de dono.",
+        };
+      }
+    } else {
+      return {
+        error: "Sem permissão para criar academia. Use um convite de dono.",
+      };
+    }
+  }
+
   const { data: academyId, error } = await supabase.rpc(
     "create_academy_with_owner",
     {
@@ -122,6 +160,12 @@ export async function createAcademy(
   );
 
   if (error || !academyId) {
+    const msg = error?.message ?? "";
+    if (msg.includes("academy_create_forbidden")) {
+      return {
+        error: "Sem permissão para criar academia. Use um convite de dono.",
+      };
+    }
     return {
       error:
         error?.message ??
@@ -192,7 +236,7 @@ export async function selectAcademy(
 
   const { data: member, error } = await supabase
     .from("academy_members")
-    .select("id")
+    .select("id, role")
     .eq("profile_id", user.id)
     .eq("academy_id", academyId)
     .eq("status", "active")
@@ -203,7 +247,7 @@ export async function selectAcademy(
   }
 
   await setActiveAcademyId(academyId);
-  redirect("/home");
+  redirect(defaultAppHomePath(member.role as MemberRole));
 }
 
 export async function selectAcademyFromForm(

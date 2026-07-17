@@ -1,0 +1,7 @@
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Every 10 minutes — push reminder ~1h before class
+[functions."class-reminders"]
+  schedule = "*/10 * * * *"

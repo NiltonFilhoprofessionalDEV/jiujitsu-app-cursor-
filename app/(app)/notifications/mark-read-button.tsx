@@ -8,6 +8,7 @@ import {
 } from "@/actions/notifications";
 import { Button } from "@/components/ui/button";
 
+/** @deprecated Prefer NotificationCard tap-to-read. Kept for compatibility. */
 const initialState: NotificationActionState = null;
 
 export function MarkReadButton({ id }: { id: string }) {

@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation";
 import { ROLE_LABELS } from "@/app/(app)/members/labels";
 import { PageHeader } from "@/components/layout/page-header";
-import { ChangePasswordForm } from "@/components/profile/change-password-form";
 import { ProfileAvatarUpload } from "@/components/profile/profile-avatar-upload";
+import { ProfileBeltCard } from "@/components/profile/profile-belt-card";
+import { ProfileEditableSection } from "@/components/profile/profile-editable-section";
+import { ProfilePreferences } from "@/components/profile/profile-preferences";
+import { getPushReminderStatus } from "@/actions/push";
 import { getActiveAcademyBrief } from "@/lib/academy/active";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { createClient } from "@/lib/supabase/server";
@@ -22,21 +25,36 @@ export default async function ProfilePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name, email, phone, avatar_url")
-    .eq("id", membership.profile_id)
-    .maybeSingle();
+  const [{ data: profile }, { data: memberRow }, { data: privateDetails }] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("name, email, phone, avatar_url, birth_date")
+        .eq("id", membership.profile_id)
+        .maybeSingle(),
+      supabase
+        .from("academy_members")
+        .select("current_belt, current_degree, joined_at")
+        .eq("id", membership.id)
+        .maybeSingle(),
+      supabase
+        .from("member_private_details")
+        .select("emergency_contact_name, emergency_contact_phone")
+        .eq("member_id", membership.id)
+        .maybeSingle(),
+    ]);
 
   const displayName = profile?.name ?? "Usuário";
   const initial = (displayName || user?.email || "?").slice(0, 1).toUpperCase();
+  const pushStatus =
+    membership.role === "student" ? await getPushReminderStatus() : null;
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow={academy.name}
         title="Perfil"
-        description="Seus dados na academia"
+        description="Seus dados e preferências"
       />
 
       <section className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-[var(--surface-shadow)] backdrop-blur-xl">
@@ -58,30 +76,30 @@ export default async function ProfilePage() {
             </p>
           </div>
         </div>
-
-        <dl className="space-y-3 border-t border-border pt-4 text-sm">
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">Papel</dt>
-            <dd className="font-medium text-foreground">
-              {ROLE_LABELS[membership.role]}
-            </dd>
-          </div>
-          <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">Academia</dt>
-            <dd className="truncate font-medium text-foreground">
-              {academy.name}
-            </dd>
-          </div>
-          {profile?.phone ? (
-            <div className="flex justify-between gap-3">
-              <dt className="text-muted-foreground">Telefone</dt>
-              <dd className="font-medium text-foreground">{profile.phone}</dd>
-            </div>
-          ) : null}
-        </dl>
       </section>
 
-      <ChangePasswordForm />
+      <ProfileBeltCard
+        belt={memberRow?.current_belt ?? null}
+        degree={
+          typeof memberRow?.current_degree === "number"
+            ? memberRow.current_degree
+            : null
+        }
+        joinedAt={memberRow?.joined_at ?? null}
+      />
+
+      <ProfileEditableSection
+        name={displayName}
+        email={profile?.email ?? user?.email ?? ""}
+        phone={profile?.phone ?? null}
+        birthDate={profile?.birth_date ?? null}
+        roleLabel={ROLE_LABELS[membership.role]}
+        academyName={academy.name}
+        emergencyName={privateDetails?.emergency_contact_name ?? null}
+        emergencyPhone={privateDetails?.emergency_contact_phone ?? null}
+      />
+
+      <ProfilePreferences push={pushStatus} />
     </div>
   );
 }

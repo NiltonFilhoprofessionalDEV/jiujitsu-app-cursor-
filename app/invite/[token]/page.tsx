@@ -48,7 +48,7 @@ export default async function InvitePage({ params }: { params: Params }) {
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center px-4">
       <div className="space-y-6 rounded-2xl border border-border bg-card p-6 backdrop-blur-xl">
         <header className="space-y-2 text-center">
-          <p className="text-sm font-medium text-primary">BJJ Manager</p>
+          <p className="text-sm font-medium text-primary">BJJ Pulse</p>
           <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
             {preview.academyName}
           </h1>

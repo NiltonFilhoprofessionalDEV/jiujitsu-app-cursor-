@@ -14,6 +14,7 @@ import {
   createMemberByEmailSchema,
   listMembersFilterSchema,
   updateMemberSchema,
+  type ListMembersFilter,
 } from "@/lib/validations/members";
 import type { MemberRole, MemberStatus } from "@/types/domain";
 
@@ -254,7 +255,7 @@ export async function listMembers(
   }
 
   const parsed = listMembersFilterSchema.safeParse(filters);
-  const filter = parsed.success ? parsed.data : {};
+  const filter: Partial<ListMembersFilter> = parsed.success ? parsed.data : {};
 
   const supabase = await createClient();
   let query = supabase
@@ -278,10 +279,27 @@ export async function listMembers(
     throw error;
   }
 
-  return (data ?? []).flatMap((row) => {
+  let rows = (data ?? []).flatMap((row) => {
     const mapped = mapMemberRow(row as Parameters<typeof mapMemberRow>[0]);
     return mapped ? [mapped] : [];
   });
+
+  const needle = filter.q?.trim().toLowerCase();
+  if (needle) {
+    rows = rows.filter((row) => {
+      const haystack = [
+        row.profile.name,
+        row.profile.email,
+        row.profile.phone ?? "",
+        row.emergency_contact_phone ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(needle);
+    });
+  }
+
+  return rows;
 }
 
 export async function getMember(

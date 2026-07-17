@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { getVirtualLesson } from "@/actions/classroom";
+import {
+  getVirtualLesson,
+  listLessonComments,
+} from "@/actions/classroom";
+import { lessonCategoryLabel } from "@/lib/classroom/categories";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
+import { LessonComments } from "../lesson-comments";
+import { LessonFavoriteButton } from "../lesson-favorite-button";
 import { YoutubePlayer } from "./youtube-player";
 
 export default async function ClassroomLessonPage({
@@ -23,18 +29,27 @@ export default async function ClassroomLessonPage({
   }
 
   const { id } = await params;
-  const lesson = await getVirtualLesson(id);
+  const [lesson, comments] = await Promise.all([
+    getVirtualLesson(id),
+    listLessonComments(id).catch(() => []),
+  ]);
   if (!lesson) notFound();
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/classroom"
-        className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Voltar para Sala virtual
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href="/classroom"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar para Vídeos
+        </Link>
+        <LessonFavoriteButton
+          lessonId={lesson.id}
+          initialFavorite={lesson.is_favorite}
+        />
+      </div>
 
       <YoutubePlayer
         videoId={lesson.youtube_video_id}
@@ -51,14 +66,15 @@ export default async function ClassroomLessonPage({
           </p>
         ) : null}
         <p className="text-[10px] text-muted-foreground">
+          {lessonCategoryLabel(lesson.category)
+            ? `${lessonCategoryLabel(lesson.category)} · `
+            : ""}
           {lesson.class_name ? `${lesson.class_name} · ` : ""}
           Por {lesson.created_by_name}
         </p>
-        <p className="text-xs text-muted-foreground">
-          Se o vídeo não carregar: este vídeo não permite reprodução no app.
-          Verifique se está público ou unlisted com embed liberado.
-        </p>
       </header>
+
+      <LessonComments lessonId={lesson.id} comments={comments} />
     </div>
   );
 }

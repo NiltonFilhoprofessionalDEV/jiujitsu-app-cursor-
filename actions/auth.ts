@@ -5,7 +5,10 @@ import {
   clearActiveAcademyId,
   setActiveAcademyId,
 } from "@/lib/academy/context";
+import { isPlatformAdminEmail } from "@/lib/platform-admin";
+import { defaultAppHomePath } from "@/lib/journey/nav";
 import { createClient } from "@/lib/supabase/server";
+import type { MemberRole } from "@/types/domain";
 import { loginSchema, signupSchema } from "@/lib/validations/auth";
 
 export type AuthActionState = {
@@ -26,9 +29,11 @@ function firstValidationError(error: {
 async function safeNextPath(formData: FormData): Promise<string | null> {
   const next = formData.get("next");
   if (typeof next !== "string" || !next.startsWith("/")) return null;
-  // Only allow internal relative paths (invite flow)
+  // Only allow internal relative paths (invite flows)
   if (next.startsWith("//") || next.includes("://")) return null;
-  if (next.startsWith("/invite/")) return next;
+  if (next.startsWith("/invite/") || next.startsWith("/owner-invite/")) {
+    return next;
+  }
   return null;
 }
 
@@ -43,7 +48,7 @@ async function redirectAfterAuth(
   const supabase = await createClient();
   const { data: members, error } = await supabase
     .from("academy_members")
-    .select("academy_id")
+    .select("academy_id, role")
     .eq("profile_id", userId)
     .eq("status", "active");
 
@@ -58,12 +63,27 @@ async function redirectAfterAuth(
 
   if (list.length === 0) {
     await clearActiveAcademyId();
-    redirect("/create-academy");
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("can_create_academy")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (
+      profile?.can_create_academy ||
+      isPlatformAdminEmail(user?.email)
+    ) {
+      redirect("/create-academy");
+    }
+    redirect("/waiting-academy");
   }
 
   if (list.length === 1) {
     await setActiveAcademyId(list[0].academy_id as string);
-    redirect("/home");
+    redirect(defaultAppHomePath(list[0].role as MemberRole));
   }
 
   await clearActiveAcademyId();
@@ -105,6 +125,21 @@ export async function signup(
   _prevState: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
+  const nextPath = await safeNextPath(formData);
+  if (!nextPath) {
+    return {
+      error:
+        "Cadastro só é permitido com um link de convite válido da academia.",
+    };
+  }
+
+  const inviteOk = await isInviteNextValid(nextPath);
+  if (!inviteOk) {
+    return {
+      error: "Este convite é inválido, expirou ou já foi usado.",
+    };
+  }
+
   const parsed = signupSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
@@ -128,17 +163,39 @@ export async function signup(
     return { error: error.message };
   }
 
-  const nextPath = await safeNextPath(formData);
-
   if (data.session && data.user) {
     return await redirectAfterAuth(data.user.id, nextPath);
   }
 
-  if (nextPath) {
-    redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+  redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+}
+
+async function isInviteNextValid(nextPath: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  if (nextPath.startsWith("/invite/")) {
+    const token = nextPath.slice("/invite/".length).split("/")[0]?.trim();
+    if (!token) return false;
+    const { data, error } = await supabase.rpc("get_invite_preview", {
+      p_token: token,
+    });
+    if (error || !data) return false;
+    const row = Array.isArray(data) ? data[0] : data;
+    return Boolean(row?.is_valid);
   }
 
-  redirect("/login");
+  if (nextPath.startsWith("/owner-invite/")) {
+    const token = nextPath.slice("/owner-invite/".length).split("/")[0]?.trim();
+    if (!token) return false;
+    const { data, error } = await supabase.rpc("get_owner_invite_preview", {
+      p_token: token,
+    });
+    if (error || !data) return false;
+    const row = Array.isArray(data) ? data[0] : data;
+    return Boolean(row?.is_valid);
+  }
+
+  return false;
 }
 
 export async function logout() {

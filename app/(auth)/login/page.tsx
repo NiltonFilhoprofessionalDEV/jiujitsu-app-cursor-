@@ -10,7 +10,9 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   const next =
-    typeof params.next === "string" && params.next.startsWith("/invite/")
+    typeof params.next === "string" &&
+    (params.next.startsWith("/invite/") ||
+      params.next.startsWith("/owner-invite/"))
       ? params.next
       : undefined;
 

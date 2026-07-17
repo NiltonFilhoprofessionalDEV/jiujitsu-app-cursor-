@@ -3,10 +3,10 @@ import { cn } from "@/lib/utils";
 /** BJJ: preto · vermelho · branco — legível no dark com stroke no preto. */
 export function BrandWordmark({
   className,
-  showManager = true,
+  showPulse = true,
 }: {
   className?: string;
-  showManager?: boolean;
+  showPulse?: boolean;
 }) {
   return (
     <p
@@ -14,7 +14,7 @@ export function BrandWordmark({
         "auth-brand font-display tracking-[0.08em]",
         className,
       )}
-      aria-label="BJJ Manager"
+      aria-label="BJJ Pulse"
     >
       <span className="inline-flex items-baseline gap-[0.02em]">
         <span
@@ -31,8 +31,8 @@ export function BrandWordmark({
           J
         </span>
       </span>
-      {showManager ? (
-        <span className="text-[var(--bjj-text)]"> Manager</span>
+      {showPulse ? (
+        <span className="text-[var(--bjj-text)]"> Pulse</span>
       ) : null}
     </p>
   );

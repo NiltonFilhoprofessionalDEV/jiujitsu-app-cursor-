@@ -16,7 +16,7 @@ export default async function OnboardingLayout({
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col px-4 py-8">
+    <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col px-4 py-8 lg:max-w-xl lg:justify-center lg:py-16">
       {children}
     </div>
   );

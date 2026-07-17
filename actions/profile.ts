@@ -1,8 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getActiveMembership } from "@/lib/permissions/assert";
 import { createClient } from "@/lib/supabase/server";
 import { changePasswordSchema } from "@/lib/validations/auth";
+import {
+  updateEmergencyContactSchema,
+  updatePersonalProfileSchema,
+} from "@/lib/validations/profile";
 
 export type ProfileActionState = {
   error?: string;
@@ -21,6 +26,14 @@ function firstValidationError(error: {
   const flat = error.flatten();
   const fieldMessage = Object.values(flat.fieldErrors).flat().find(Boolean);
   return fieldMessage ?? flat.formErrors[0] ?? "Dados inválidos";
+}
+
+function revalidateProfileSurfaces() {
+  revalidatePath("/profile");
+  revalidatePath("/home");
+  revalidatePath("/menu");
+  revalidatePath("/journey");
+  revalidatePath("/", "layout");
 }
 
 export async function uploadAvatar(
@@ -86,19 +99,98 @@ export async function uploadAvatar(
     };
   }
 
-  revalidatePath("/profile");
-  revalidatePath("/home");
-  revalidatePath("/menu");
+  revalidateProfileSurfaces();
   revalidatePath("/checkin");
   revalidatePath("/classes");
-  revalidatePath("/stats");
   revalidatePath("/members");
-  revalidatePath("/graduations");
-  revalidatePath("/announcements");
-  revalidatePath("/notifications");
-  revalidatePath("/academy");
 
   return { success: "Foto atualizada." };
+}
+
+export async function updatePersonalProfile(
+  _prevState: ProfileActionState,
+  formData: FormData,
+): Promise<ProfileActionState> {
+  const parsed = updatePersonalProfileSchema.safeParse({
+    name: formData.get("name"),
+    phone: formData.get("phone") ?? "",
+    birth_date: formData.get("birth_date") ?? "",
+  });
+
+  if (!parsed.success) {
+    return { error: firstValidationError(parsed.error) };
+  }
+
+  try {
+    const member = await getActiveMembership();
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        name: parsed.data.name,
+        phone: parsed.data.phone,
+        birth_date: parsed.data.birth_date,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", member.profile_id);
+
+    if (error) return { error: error.message };
+
+    revalidateProfileSurfaces();
+    return { success: "Dados atualizados." };
+  } catch {
+    return { error: "Não foi possível salvar seus dados." };
+  }
+}
+
+export async function updateEmergencyContact(
+  _prevState: ProfileActionState,
+  formData: FormData,
+): Promise<ProfileActionState> {
+  const parsed = updateEmergencyContactSchema.safeParse({
+    emergency_contact_name: formData.get("emergency_contact_name") ?? "",
+    emergency_contact_phone: formData.get("emergency_contact_phone") ?? "",
+  });
+
+  if (!parsed.success) {
+    return { error: firstValidationError(parsed.error) };
+  }
+
+  try {
+    const member = await getActiveMembership();
+    const supabase = await createClient();
+
+    const { data: existing } = await supabase
+      .from("member_private_details")
+      .select("member_id")
+      .eq("member_id", member.id)
+      .maybeSingle();
+
+    const payload = {
+      emergency_contact_name: parsed.data.emergency_contact_name,
+      emergency_contact_phone: parsed.data.emergency_contact_phone,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (existing) {
+      const { error } = await supabase
+        .from("member_private_details")
+        .update(payload)
+        .eq("member_id", member.id);
+      if (error) return { error: error.message };
+    } else {
+      const { error } = await supabase.from("member_private_details").insert({
+        member_id: member.id,
+        ...payload,
+      });
+      if (error) return { error: error.message };
+    }
+
+    revalidatePath("/profile");
+    return { success: "Contato de emergência salvo." };
+  } catch {
+    return { error: "Não foi possível salvar o contato de emergência." };
+  }
 }
 
 export async function changePassword(

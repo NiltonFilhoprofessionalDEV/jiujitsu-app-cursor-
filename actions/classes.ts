@@ -10,13 +10,19 @@ import {
 import { can } from "@/lib/permissions/capabilities";
 import { createClient } from "@/lib/supabase/server";
 import {
+  copySchedulesFromClassSchema,
   createClassSchema,
   createScheduleSchema,
+  createSchedulesBulkSchema,
+  deleteScheduleDayOverrideSchema,
   deleteScheduleSchema,
+  duplicateScheduleSchema,
+  saveClassAutomationSchema,
   updateClassDefaultInstructorSchema,
   updateClassSchema,
   updateScheduleAutoOpenSchema,
   updateScheduleSchema,
+  upsertScheduleDayOverrideSchema,
 } from "@/lib/validations/classes";
 
 export type ClassActionState = {
@@ -33,6 +39,16 @@ export type ClassScheduleRow = {
   auto_open_enabled: boolean;
   auto_open_lead_minutes: number;
   auto_close_grace_minutes: number;
+};
+
+export type ScheduleDayOverrideRow = {
+  id: string;
+  class_id: string;
+  schedule_id: string;
+  date: string;
+  cancelled: boolean;
+  substitute_instructor_id: string | null;
+  note: string | null;
 };
 
 export type ClassRow = {
@@ -94,6 +110,21 @@ function firstValidationError(error: {
   return fieldMessage ?? flat.formErrors[0] ?? "Dados inválidos";
 }
 
+function parseWeekdaysFromForm(formData: FormData): number[] {
+  const raw = formData.getAll("weekdays");
+  const values = raw.length > 0 ? raw : [formData.get("weekdays")];
+  const parsed = values
+    .flatMap((value) =>
+      String(value ?? "")
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean),
+    )
+    .map((value) => Number(value))
+    .filter((value) => Number.isInteger(value) && value >= 0 && value <= 6);
+  return [...new Set(parsed)].sort((a, b) => a - b);
+}
+
 function formOptional(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === "string" ? value : "";
@@ -103,11 +134,42 @@ function normalizeTime(value: string): string {
   return value.length === 5 ? `${value}:00` : value;
 }
 
+async function listEnrolledClassIds(
+  memberId: string,
+): Promise<string[] | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("class_members")
+    .select("class_id")
+    .eq("member_id", memberId);
+
+  if (error) throw error;
+  return (data ?? []).map((row) => row.class_id as string);
+}
+
+async function assertStudentCanViewClass(
+  memberId: string,
+  role: string,
+  classId: string,
+): Promise<boolean> {
+  if (role !== "student") return true;
+  const ids = await listEnrolledClassIds(memberId);
+  return (ids ?? []).includes(classId);
+}
+
 export async function listClasses(): Promise<ClassRow[]> {
   const member = await getActiveMembership();
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  let enrolledIds: string[] | null = null;
+  if (member.role === "student") {
+    enrolledIds = await listEnrolledClassIds(member.id);
+    if (!enrolledIds || enrolledIds.length === 0) {
+      return [];
+    }
+  }
+
+  let query = supabase
     .from("classes")
     .select(
       `
@@ -127,6 +189,12 @@ export async function listClasses(): Promise<ClassRow[]> {
     )
     .eq("academy_id", member.academy_id)
     .order("name");
+
+  if (enrolledIds) {
+    query = query.in("id", enrolledIds);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;
@@ -160,6 +228,13 @@ export async function listClasses(): Promise<ClassRow[]> {
 export async function getClass(classId: string): Promise<ClassRow | null> {
   const member = await getActiveMembership();
   const supabase = await createClient();
+
+  const allowed = await assertStudentCanViewClass(
+    member.id,
+    member.role,
+    classId,
+  );
+  if (!allowed) return null;
 
   const { data, error } = await supabase
     .from("classes")
@@ -382,6 +457,232 @@ export async function addSchedule(
         err instanceof Error
           ? err.message
           : "Não foi possível adicionar o horário.",
+    };
+  }
+}
+
+export async function addSchedulesBulk(
+  _prevState: ClassActionState,
+  formData: FormData,
+): Promise<ClassActionState> {
+  try {
+    const actor = await assertCapability("manage_classes");
+
+    const parsed = createSchedulesBulkSchema.safeParse({
+      class_id: formData.get("class_id"),
+      weekdays: parseWeekdaysFromForm(formData),
+      start_time: formData.get("start_time"),
+      end_time: formData.get("end_time"),
+    });
+
+    if (!parsed.success) {
+      return { error: firstValidationError(parsed.error) };
+    }
+
+    const supabase = await createClient();
+    const { data: klass, error: classError } = await supabase
+      .from("classes")
+      .select("id")
+      .eq("id", parsed.data.class_id)
+      .eq("academy_id", actor.academy_id)
+      .maybeSingle();
+
+    if (classError) return { error: classError.message };
+    if (!klass) return { error: "Turma não encontrada." };
+
+    const rows = parsed.data.weekdays.map((weekday) => ({
+      class_id: parsed.data.class_id,
+      weekday,
+      start_time: normalizeTime(parsed.data.start_time),
+      end_time: normalizeTime(parsed.data.end_time),
+    }));
+
+    const { error } = await supabase.from("class_schedules").insert(rows);
+    if (error) return { error: error.message };
+
+    revalidatePath("/classes");
+    revalidatePath(`/classes/${parsed.data.class_id}`);
+    return {
+      success:
+        rows.length === 1
+          ? "Horário adicionado."
+          : `${rows.length} horários adicionados.`,
+    };
+  } catch (err) {
+    if (err instanceof PermissionError) {
+      return { error: "Sem permissão para gerenciar turmas." };
+    }
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "Não foi possível adicionar os horários.",
+    };
+  }
+}
+
+export async function duplicateSchedule(
+  _prevState: ClassActionState,
+  formData: FormData,
+): Promise<ClassActionState> {
+  try {
+    const actor = await assertCapability("manage_classes");
+
+    const parsed = duplicateScheduleSchema.safeParse({
+      id: formData.get("id"),
+      class_id: formData.get("class_id"),
+      weekdays: parseWeekdaysFromForm(formData),
+    });
+
+    if (!parsed.success) {
+      return { error: firstValidationError(parsed.error) };
+    }
+
+    const supabase = await createClient();
+    const { data: klass, error: classError } = await supabase
+      .from("classes")
+      .select("id")
+      .eq("id", parsed.data.class_id)
+      .eq("academy_id", actor.academy_id)
+      .maybeSingle();
+
+    if (classError) return { error: classError.message };
+    if (!klass) return { error: "Turma não encontrada." };
+
+    const { data: source, error: sourceError } = await supabase
+      .from("class_schedules")
+      .select(
+        "weekday, start_time, end_time, auto_open_enabled, auto_open_lead_minutes, auto_close_grace_minutes",
+      )
+      .eq("id", parsed.data.id)
+      .eq("class_id", parsed.data.class_id)
+      .maybeSingle();
+
+    if (sourceError) return { error: sourceError.message };
+    if (!source) return { error: "Horário não encontrado." };
+
+    const targetDays = parsed.data.weekdays.filter(
+      (day) => day !== source.weekday,
+    );
+    if (targetDays.length === 0) {
+      return { error: "Selecione outro dia para duplicar." };
+    }
+
+    const rows = targetDays.map((weekday) => ({
+      class_id: parsed.data.class_id,
+      weekday,
+      start_time: source.start_time,
+      end_time: source.end_time,
+      auto_open_enabled: source.auto_open_enabled,
+      auto_open_lead_minutes: source.auto_open_lead_minutes,
+      auto_close_grace_minutes: source.auto_close_grace_minutes,
+    }));
+
+    const { error } = await supabase.from("class_schedules").insert(rows);
+    if (error) return { error: error.message };
+
+    revalidatePath("/classes");
+    revalidatePath(`/classes/${parsed.data.class_id}`);
+    return {
+      success:
+        rows.length === 1
+          ? "Horário duplicado."
+          : `Horário duplicado em ${rows.length} dias.`,
+    };
+  } catch (err) {
+    if (err instanceof PermissionError) {
+      return { error: "Sem permissão para gerenciar turmas." };
+    }
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "Não foi possível duplicar o horário.",
+    };
+  }
+}
+
+export async function copySchedulesFromClass(
+  _prevState: ClassActionState,
+  formData: FormData,
+): Promise<ClassActionState> {
+  try {
+    const actor = await assertCapability("manage_classes");
+
+    const replaceRaw = formData.get("replace_existing");
+    const parsed = copySchedulesFromClassSchema.safeParse({
+      class_id: formData.get("class_id"),
+      source_class_id: formData.get("source_class_id"),
+      replace_existing: replaceRaw === "on" || replaceRaw === "true",
+    });
+
+    if (!parsed.success) {
+      return { error: firstValidationError(parsed.error) };
+    }
+
+    if (parsed.data.class_id === parsed.data.source_class_id) {
+      return { error: "Escolha outra turma para copiar." };
+    }
+
+    const supabase = await createClient();
+    const { data: classes, error: classesError } = await supabase
+      .from("classes")
+      .select("id")
+      .eq("academy_id", actor.academy_id)
+      .in("id", [parsed.data.class_id, parsed.data.source_class_id]);
+
+    if (classesError) return { error: classesError.message };
+    if ((classes ?? []).length !== 2) {
+      return { error: "Turma não encontrada." };
+    }
+
+    const { data: sourceRows, error: sourceError } = await supabase
+      .from("class_schedules")
+      .select(
+        "weekday, start_time, end_time, auto_open_enabled, auto_open_lead_minutes, auto_close_grace_minutes",
+      )
+      .eq("class_id", parsed.data.source_class_id);
+
+    if (sourceError) return { error: sourceError.message };
+    if (!sourceRows?.length) {
+      return { error: "A turma de origem não tem horários." };
+    }
+
+    if (parsed.data.replace_existing) {
+      const { error: deleteError } = await supabase
+        .from("class_schedules")
+        .delete()
+        .eq("class_id", parsed.data.class_id);
+      if (deleteError) return { error: deleteError.message };
+    }
+
+    const rows = sourceRows.map((row) => ({
+      class_id: parsed.data.class_id,
+      weekday: row.weekday,
+      start_time: row.start_time,
+      end_time: row.end_time,
+      auto_open_enabled: row.auto_open_enabled,
+      auto_open_lead_minutes: row.auto_open_lead_minutes,
+      auto_close_grace_minutes: row.auto_close_grace_minutes,
+    }));
+
+    const { error } = await supabase.from("class_schedules").insert(rows);
+    if (error) return { error: error.message };
+
+    revalidatePath("/classes");
+    revalidatePath(`/classes/${parsed.data.class_id}`);
+    return {
+      success: `Grade copiada (${rows.length} horário${rows.length === 1 ? "" : "s"}).`,
+    };
+  } catch (err) {
+    if (err instanceof PermissionError) {
+      return { error: "Sem permissão para gerenciar turmas." };
+    }
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "Não foi possível copiar a grade.",
     };
   }
 }
@@ -619,6 +920,135 @@ export async function updateClassDefaultInstructor(
   }
 }
 
+const STAFF_ROLES = [
+  "owner",
+  "administrator",
+  "instructor",
+  "assistant_instructor",
+] as const;
+
+async function assertInstructorEligible(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  academyId: string,
+  instructorId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data: instructor, error } = await supabase
+    .from("academy_members")
+    .select("id, role, status")
+    .eq("id", instructorId)
+    .eq("academy_id", academyId)
+    .maybeSingle();
+
+  if (error) return { ok: false, error: error.message };
+  if (
+    !instructor ||
+    instructor.status !== "active" ||
+    !STAFF_ROLES.includes(instructor.role as (typeof STAFF_ROLES)[number])
+  ) {
+    return { ok: false, error: "Professor inválido para abertura automática." };
+  }
+  return { ok: true };
+}
+
+export async function saveClassAutomation(
+  _prevState: ClassActionState,
+  formData: FormData,
+): Promise<ClassActionState> {
+  try {
+    const actor = await assertCanConfigureAutoOpen();
+
+    const enabledRaw = formData.get("auto_open_enabled");
+    const parsed = saveClassAutomationSchema.safeParse({
+      class_id: formData.get("class_id"),
+      default_instructor_id: formData.get("default_instructor_id"),
+      auto_open_enabled: enabledRaw === "on" || enabledRaw === "true",
+      auto_open_lead_minutes: formData.get("auto_open_lead_minutes") || 30,
+      auto_close_grace_minutes: formData.get("auto_close_grace_minutes") || 15,
+    });
+
+    if (!parsed.success) {
+      return { error: firstValidationError(parsed.error) };
+    }
+
+    if (parsed.data.auto_open_enabled && !parsed.data.default_instructor_id) {
+      return {
+        error: "Escolha o professor responsável antes de ativar a automação.",
+      };
+    }
+
+    const supabase = await createClient();
+    const { data: klass, error: classError } = await supabase
+      .from("classes")
+      .select("id")
+      .eq("id", parsed.data.class_id)
+      .eq("academy_id", actor.academy_id)
+      .maybeSingle();
+
+    if (classError) return { error: classError.message };
+    if (!klass) return { error: "Turma não encontrada." };
+
+    if (parsed.data.default_instructor_id) {
+      const check = await assertInstructorEligible(
+        supabase,
+        actor.academy_id,
+        parsed.data.default_instructor_id,
+      );
+      if (!check.ok) return { error: check.error };
+    }
+
+    const { error: classUpdateError } = await supabase
+      .from("classes")
+      .update({
+        default_instructor_id: parsed.data.default_instructor_id,
+      })
+      .eq("id", parsed.data.class_id)
+      .eq("academy_id", actor.academy_id);
+
+    if (classUpdateError) return { error: classUpdateError.message };
+
+    const { data: schedules, error: schedulesError } = await supabase
+      .from("class_schedules")
+      .select("id")
+      .eq("class_id", parsed.data.class_id);
+
+    if (schedulesError) return { error: schedulesError.message };
+
+    if (schedules && schedules.length > 0) {
+      const { error: schedulesUpdateError } = await supabase
+        .from("class_schedules")
+        .update({
+          auto_open_enabled: parsed.data.auto_open_enabled,
+          auto_open_lead_minutes: parsed.data.auto_open_lead_minutes,
+          auto_close_grace_minutes: parsed.data.auto_close_grace_minutes,
+        })
+        .eq("class_id", parsed.data.class_id);
+
+      if (schedulesUpdateError) return { error: schedulesUpdateError.message };
+    } else if (parsed.data.auto_open_enabled) {
+      return {
+        error: "Cadastre pelo menos um horário antes de ativar a automação.",
+      };
+    }
+
+    revalidatePath(`/classes/${parsed.data.class_id}`);
+    return {
+      success: parsed.data.auto_open_enabled
+        ? "Automação salva: a aula abre sozinha nos horários da grade."
+        : "Automação desativada. Professor atualizado.",
+    };
+  } catch (err) {
+    if (err instanceof PermissionError) {
+      return { error: "Sem permissão para configurar abertura automática." };
+    }
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "Não foi possível salvar a automação.",
+    };
+  }
+}
+
 export async function updateScheduleAutoOpen(
   _prevState: ClassActionState,
   formData: FormData,
@@ -687,6 +1117,184 @@ export async function updateScheduleAutoOpen(
         err instanceof Error
           ? err.message
           : "Não foi possível salvar a abertura automática.",
+    };
+  }
+}
+
+export async function listScheduleDayOverrides(
+  classId: string,
+): Promise<ScheduleDayOverrideRow[]> {
+  const member = await getActiveMembership();
+  const supabase = await createClient();
+
+  const from = new Date();
+  from.setHours(0, 0, 0, 0);
+  const to = new Date(from);
+  to.setDate(to.getDate() + 60);
+
+  const fromStr = from.toISOString().slice(0, 10);
+  const toStr = to.toISOString().slice(0, 10);
+
+  const { data, error } = await supabase
+    .from("class_schedule_day_overrides")
+    .select(
+      "id, class_id, schedule_id, date, cancelled, substitute_instructor_id, note",
+    )
+    .eq("class_id", classId)
+    .eq("academy_id", member.academy_id)
+    .gte("date", fromStr)
+    .lte("date", toStr)
+    .order("date");
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    id: row.id as string,
+    class_id: row.class_id as string,
+    schedule_id: row.schedule_id as string,
+    date: row.date as string,
+    cancelled: Boolean(row.cancelled),
+    substitute_instructor_id:
+      (row.substitute_instructor_id as string | null) ?? null,
+    note: (row.note as string | null) ?? null,
+  }));
+}
+
+export async function upsertScheduleDayOverride(
+  _prevState: ClassActionState,
+  formData: FormData,
+): Promise<ClassActionState> {
+  try {
+    const actor = await assertCanConfigureAutoOpen();
+
+    const parsed = upsertScheduleDayOverrideSchema.safeParse({
+      class_id: formData.get("class_id"),
+      schedule_id: formData.get("schedule_id"),
+      date: formData.get("date"),
+      mode: formData.get("mode"),
+      substitute_instructor_id: formData.get("substitute_instructor_id"),
+      note: formData.get("note") ?? "",
+    });
+
+    if (!parsed.success) {
+      return { error: firstValidationError(parsed.error) };
+    }
+
+    const cancelled = parsed.data.mode === "cancel";
+    const substituteId = cancelled
+      ? null
+      : parsed.data.substitute_instructor_id;
+
+    const supabase = await createClient();
+    const { data: klass, error: classError } = await supabase
+      .from("classes")
+      .select("id")
+      .eq("id", parsed.data.class_id)
+      .eq("academy_id", actor.academy_id)
+      .maybeSingle();
+
+    if (classError) return { error: classError.message };
+    if (!klass) return { error: "Turma não encontrada." };
+
+    const { data: schedule, error: scheduleError } = await supabase
+      .from("class_schedules")
+      .select("id, weekday")
+      .eq("id", parsed.data.schedule_id)
+      .eq("class_id", parsed.data.class_id)
+      .maybeSingle();
+
+    if (scheduleError) return { error: scheduleError.message };
+    if (!schedule) return { error: "Horário não encontrado." };
+
+    const [year, month, day] = parsed.data.date.split("-").map(Number);
+    const weekdayOfDate = new Date(Date.UTC(year, month - 1, day, 12)).getUTCDay();
+    if (weekdayOfDate !== schedule.weekday) {
+      return {
+        error: "A data precisa cair no mesmo dia da semana do horário.",
+      };
+    }
+
+    if (substituteId) {
+      const check = await assertInstructorEligible(
+        supabase,
+        actor.academy_id,
+        substituteId,
+      );
+      if (!check.ok) return { error: check.error };
+    }
+
+    const { error } = await supabase.from("class_schedule_day_overrides").upsert(
+      {
+        academy_id: actor.academy_id,
+        class_id: parsed.data.class_id,
+        schedule_id: parsed.data.schedule_id,
+        date: parsed.data.date,
+        cancelled,
+        substitute_instructor_id: substituteId,
+        note: parsed.data.note ?? null,
+        created_by: actor.id,
+      },
+      { onConflict: "schedule_id,date" },
+    );
+
+    if (error) return { error: error.message };
+
+    revalidatePath(`/classes/${parsed.data.class_id}`);
+    return {
+      success: cancelled
+        ? "Treino cancelado neste dia (grade mantida)."
+        : "Professor substituto definido para este dia.",
+    };
+  } catch (err) {
+    if (err instanceof PermissionError) {
+      return { error: "Sem permissão para configurar exceções." };
+    }
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "Não foi possível salvar a exceção.",
+    };
+  }
+}
+
+export async function deleteScheduleDayOverride(
+  _prevState: ClassActionState,
+  formData: FormData,
+): Promise<ClassActionState> {
+  try {
+    const actor = await assertCanConfigureAutoOpen();
+
+    const parsed = deleteScheduleDayOverrideSchema.safeParse({
+      id: formData.get("id"),
+      class_id: formData.get("class_id"),
+    });
+
+    if (!parsed.success) {
+      return { error: firstValidationError(parsed.error) };
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("class_schedule_day_overrides")
+      .delete()
+      .eq("id", parsed.data.id)
+      .eq("class_id", parsed.data.class_id)
+      .eq("academy_id", actor.academy_id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath(`/classes/${parsed.data.class_id}`);
+    return { success: "Exceção removida. Grade normal restaurada." };
+  } catch (err) {
+    if (err instanceof PermissionError) {
+      return { error: "Sem permissão para remover exceções." };
+    }
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "Não foi possível remover a exceção.",
     };
   }
 }

@@ -33,7 +33,7 @@ export default async function AcademyPage() {
   }
 
   if (!academy) {
-    redirect("/create-academy");
+    redirect("/waiting-academy");
   }
 
   return (

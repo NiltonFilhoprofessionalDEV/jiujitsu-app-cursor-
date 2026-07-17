@@ -1,26 +1,131 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { Check, Copy, MessageCircle } from "lucide-react";
 import { createInvite, type InviteActionState } from "@/actions/invites";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 const initialState: InviteActionState = null;
 
-export function CreateInviteForm() {
+function InviteShareCard({
+  inviteUrl,
+  whatsappUrl,
+  message,
+}: {
+  inviteUrl: string;
+  whatsappUrl: string;
+  message: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = window.setTimeout(() => setCopied(false), 2000);
+    return () => window.clearTimeout(timer);
+  }, [copied]);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-[var(--member-invite-success-border)] bg-[var(--member-invite-success-bg)]">
+      <div className="flex items-start gap-3 px-3.5 pt-3.5">
+        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--member-invite-success-fg)]/15 text-[var(--member-invite-success-fg)]">
+          <Check className="h-4 w-4 stroke-[2.5]" aria-hidden />
+        </span>
+        <div className="min-w-0 space-y-0.5">
+          <p className="text-sm font-semibold text-foreground">
+            Convite pronto
+          </p>
+          <p className="text-xs text-muted-foreground">{message}</p>
+        </div>
+      </div>
+
+      <div className="mx-3.5 mt-3 rounded-xl border border-border bg-background/60 px-3 py-2.5">
+        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          Link do convite
+        </p>
+        <p className="mt-1 truncate font-mono text-xs text-foreground">
+          {inviteUrl}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 p-3.5">
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "inline-flex h-12 items-center justify-center gap-2 rounded-xl",
+            "bg-[var(--member-invite-wa-bg)] text-sm font-semibold text-[var(--member-invite-wa-fg)]",
+            "transition active:scale-[0.98] hover:brightness-110",
+          )}
+        >
+          <MessageCircle className="h-5 w-5" aria-hidden />
+          WhatsApp
+        </a>
+        <button
+          type="button"
+          onClick={() => {
+            void handleCopy();
+          }}
+          className={cn(
+            "inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card",
+            "text-sm font-semibold text-foreground transition active:scale-[0.98] hover:bg-muted",
+            copied && "border-[var(--member-invite-success-border)] text-[var(--member-invite-success-fg)]",
+          )}
+        >
+          {copied ? (
+            <>
+              <Check className="h-4 w-4 stroke-[2.5]" aria-hidden />
+              Copiado
+            </>
+          ) : (
+            <>
+              <Copy className="h-4 w-4" aria-hidden />
+              Copiar
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function CreateInviteForm({
+  compact = false,
+}: {
+  compact?: boolean;
+}) {
   const [state, formAction, pending] = useActionState(createInvite, initialState);
 
   return (
-    <div className="space-y-4 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl">
-      <div>
-        <h2 className="text-base font-semibold text-[var(--bjj-text)]">
-          Convidar pelo WhatsApp
-        </h2>
-        <p className="text-xs text-[var(--bjj-muted)]">
-          Gere um link para o aluno se cadastrar sozinho
-        </p>
-      </div>
+    <div
+      className={
+        compact
+          ? "space-y-3"
+          : "space-y-4 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl"
+      }
+    >
+      {!compact ? (
+        <div>
+          <h2 className="text-base font-semibold text-[var(--bjj-text)]">
+            Convidar pelo WhatsApp
+          </h2>
+          <p className="text-xs text-[var(--bjj-muted)]">
+            Gere um link para o aluno se cadastrar sozinho
+          </p>
+        </div>
+      ) : null}
 
       <form action={formAction} className="space-y-3">
         <div className="space-y-1">
@@ -74,39 +179,18 @@ export function CreateInviteForm() {
           </p>
         ) : null}
 
-        {state?.success && state.inviteUrl ? (
-          <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/10 p-3 text-sm">
-            <p className="font-medium text-primary">{state.success}</p>
-            <p className="break-all text-xs text-[var(--bjj-muted)]">
-              {state.inviteUrl}
-            </p>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <a
-                href={state.whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-10 flex-1 items-center justify-center rounded-lg bg-[#25D366] text-sm font-medium text-primary-foreground hover:opacity-90"
-              >
-                Abrir WhatsApp
-              </a>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 flex-1"
-                onClick={() => {
-                  void navigator.clipboard.writeText(state.inviteUrl!);
-                }}
-              >
-                Copiar link
-              </Button>
-            </div>
-          </div>
+        {state?.success && state.inviteUrl && state.whatsappUrl ? (
+          <InviteShareCard
+            inviteUrl={state.inviteUrl}
+            whatsappUrl={state.whatsappUrl}
+            message="Compartilhe no WhatsApp ou copie o link."
+          />
         ) : null}
 
         <Button
           type="submit"
           disabled={pending}
-          className="h-10 w-full bg-primary text-primary-foreground"
+          className="h-11 w-full bg-primary text-primary-foreground"
         >
           {pending ? "Gerando…" : "Gerar convite"}
         </Button>

@@ -1,43 +1,278 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
+import { ListFilter, Search, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { LESSON_CATEGORIES } from "@/lib/classroom/categories";
 
-import { cn } from "@/lib/utils";
+export type ClassroomFilterValues = {
+  q?: string;
+  classId?: string;
+  category?: string;
+  favorites?: string;
+};
+
+function buildQuery(values: ClassroomFilterValues): string {
+  const params = new URLSearchParams();
+  if (values.q?.trim()) params.set("q", values.q.trim());
+  if (values.classId) params.set("classId", values.classId);
+  if (values.category) params.set("category", values.category);
+  if (values.favorites === "1") params.set("favorites", "1");
+  const qs = params.toString();
+  return qs ? `/classroom?${qs}` : "/classroom";
+}
+
+function normalize(values: ClassroomFilterValues) {
+  return {
+    q: values.q ?? "",
+    classId: values.classId ?? "",
+    category: values.category ?? "",
+    favorites: values.favorites === "1" ? "1" : "",
+  };
+}
+
+function countSheetFilters(values: ReturnType<typeof normalize>): number {
+  let count = 0;
+  if (values.favorites === "1") count += 1;
+  if (values.category) count += 1;
+  if (values.classId) count += 1;
+  return count;
+}
+
+const selectClassName =
+  "flex h-11 w-full rounded-xl border border-input bg-transparent px-3 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
 
 export function ClassroomFilters({
   classes,
-  activeClassId,
+  initial,
 }: {
   classes: { id: string; name: string }[];
-  activeClassId?: string;
+  initial: ClassroomFilterValues;
 }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
+  const [applied, setApplied] = useState(() => normalize(initial));
+  const [draft, setDraft] = useState(() => normalize(initial));
+  const [q, setQ] = useState(initial.q ?? "");
+  const sheetFilterCount = countSheetFilters(applied);
+
+  useEffect(() => {
+    const next = normalize(initial);
+    setApplied(next);
+    setQ(next.q);
+    if (!open) setDraft(next);
+  }, [initial.q, initial.classId, initial.category, initial.favorites, open]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      const next = { ...applied, q };
+      if (next.q === applied.q) return;
+      setApplied(next);
+      startTransition(() => {
+        router.replace(buildQuery(next));
+      });
+    }, 280);
+    return () => window.clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- navigate only when search text changes
+  }, [q, router]);
+
+  function applyFilters() {
+    const next = normalize({ ...draft, q });
+    setApplied(next);
+    setOpen(false);
+    startTransition(() => {
+      router.replace(buildQuery(next));
+    });
+  }
+
+  function clearFilters() {
+    const next = normalize({ q });
+    setDraft(next);
+    setApplied(next);
+    setOpen(false);
+    startTransition(() => {
+      router.replace(buildQuery(next));
+    });
+  }
+
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
-      <Link
-        href="/classroom"
-        className={cn(
-          "shrink-0 rounded-full border px-3 py-1.5 text-xs",
-          !activeClassId
-            ? "border-[var(--action-red)] bg-[var(--action-red)]/10 text-foreground"
-            : "border-border text-muted-foreground",
-        )}
-      >
-        Todas
-      </Link>
-      {classes.map((c) => (
-        <Link
-          key={c.id}
-          href={`/classroom?classId=${c.id}`}
-          className={cn(
-            "shrink-0 rounded-full border px-3 py-1.5 text-xs",
-            activeClassId === c.id
-              ? "border-[var(--action-red)] bg-[var(--action-red)]/10 text-foreground"
-              : "border-border text-muted-foreground",
-          )}
+    <>
+      <div className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar"
+            className="h-10 rounded-xl bg-card pl-9 pr-9"
+            aria-label="Buscar vídeos"
+            inputMode="search"
+            enterKeyHint="search"
+            autoComplete="off"
+          />
+          {q ? (
+            <button
+              type="button"
+              onClick={() => setQ("")}
+              className="absolute top-1/2 right-1.5 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              aria-label="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setDraft({ ...applied, q });
+            setOpen(true);
+          }}
+          className="relative h-10 shrink-0 gap-1.5 rounded-xl border-border bg-card px-3.5"
         >
-          {c.name}
-        </Link>
-      ))}
-    </div>
+          <ListFilter className="h-4 w-4" />
+          Filtro
+          {sheetFilterCount > 0 ? (
+            <span className="ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--inbox-unread-bg)] px-1.5 text-[10px] font-semibold text-foreground">
+              {sheetFilterCount}
+            </span>
+          ) : null}
+        </Button>
+      </div>
+
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent
+          side="bottom"
+          className="mx-auto max-w-lg gap-0 rounded-t-2xl border-border bg-popover pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[var(--surface-shadow)]"
+          overlayClassName="bg-black/55 supports-backdrop-filter:backdrop-blur-sm"
+          showCloseButton
+        >
+          <SheetHeader className="border-b border-border px-4 pb-3 pt-4">
+            <SheetTitle>Filtros</SheetTitle>
+            <SheetDescription>
+              Filtre por favoritos, categoria e turma.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="space-y-4 px-4 py-4">
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                Exibir
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDraft((prev) => ({ ...prev, favorites: "" }))
+                  }
+                  className={
+                    draft.favorites !== "1"
+                      ? "h-11 rounded-xl border border-[var(--inbox-unread-border)] bg-[var(--inbox-unread-bg)] text-sm font-medium text-foreground"
+                      : "h-11 rounded-xl border border-border bg-card text-sm text-muted-foreground"
+                  }
+                >
+                  Todos
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDraft((prev) => ({ ...prev, favorites: "1" }))
+                  }
+                  className={
+                    draft.favorites === "1"
+                      ? "h-11 rounded-xl border border-[var(--inbox-unread-border)] bg-[var(--inbox-unread-bg)] text-sm font-medium text-foreground"
+                      : "h-11 rounded-xl border border-border bg-card text-sm text-muted-foreground"
+                  }
+                >
+                  Favoritos
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="classroom-filter-category"
+                className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground"
+              >
+                Categoria
+              </label>
+              <select
+                id="classroom-filter-category"
+                value={draft.category}
+                onChange={(e) =>
+                  setDraft((prev) => ({ ...prev, category: e.target.value }))
+                }
+                className={selectClassName}
+              >
+                <option value="">Todas</option>
+                {LESSON_CATEGORIES.map((cat) => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {classes.length > 0 ? (
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="classroom-filter-class"
+                  className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground"
+                >
+                  Turma
+                </label>
+                <select
+                  id="classroom-filter-class"
+                  value={draft.classId}
+                  onChange={(e) =>
+                    setDraft((prev) => ({ ...prev, classId: e.target.value }))
+                  }
+                  className={selectClassName}
+                >
+                  <option value="">Todas turmas</option>
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+          </div>
+
+          <SheetFooter className="grid grid-cols-2 gap-2 border-t border-border px-4 pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={clearFilters}
+              disabled={pending}
+              className="h-11 rounded-xl"
+            >
+              Limpar
+            </Button>
+            <Button
+              type="button"
+              onClick={applyFilters}
+              disabled={pending}
+              className="h-11 rounded-xl bg-[var(--page-fab-bg)] text-[var(--page-fab-fg)] hover:brightness-110"
+            >
+              {pending ? "Aplicando…" : "Aplicar"}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

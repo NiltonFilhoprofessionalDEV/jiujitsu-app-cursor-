@@ -53,7 +53,7 @@ export default async function NewMemberPage() {
           ← Membros
         </Link>
         <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
-          Vincular membro
+          Novo membro
         </h1>
         <p className="text-sm text-[var(--bjj-muted)]">
           Associe uma conta existente à academia pelo e-mail

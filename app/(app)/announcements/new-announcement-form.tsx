@@ -12,7 +12,11 @@ import { Label } from "@/components/ui/label";
 
 const initialState: AnnouncementActionState = null;
 
-export function NewAnnouncementForm() {
+export function NewAnnouncementForm({
+  onSuccess,
+}: {
+  onSuccess?: () => void;
+} = {}) {
   const [state, formAction, pending] = useActionState(
     createAnnouncement,
     initialState,
@@ -20,8 +24,11 @@ export function NewAnnouncementForm() {
 
   useEffect(() => {
     if (state?.error) toast.error(state.error);
-    if (state?.success) toast.success(state.success);
-  }, [state]);
+    if (state?.success) {
+      toast.success(state.success);
+      onSuccess?.();
+    }
+  }, [state, onSuccess]);
 
   return (
     <form action={formAction} className="space-y-4">
@@ -49,7 +56,11 @@ export function NewAnnouncementForm() {
         />
         Notificar membros ativos
       </label>
-      <Button type="submit" className="h-11 w-full" disabled={pending}>
+      <Button
+        type="submit"
+        className="h-11 w-full bg-[var(--page-fab-bg)] text-[var(--page-fab-fg)]"
+        disabled={pending}
+      >
         {pending ? "Publicando…" : "Publicar aviso"}
       </Button>
     </form>

@@ -26,4 +26,6 @@ export type Capability =
   | "manage_announcements"
   | "view_announcements"
   | "manage_virtual_lessons"
-  | "view_virtual_lessons";
+  | "view_virtual_lessons"
+  | "view_own_journey"
+  | "view_teaching_journey";
