@@ -2,9 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { preload } from "swr";
+import {
+  fetchClassesBoard,
+  fetchHomeDashboard,
+  fetchStaffCheckin,
+  fetchStudentCheckin,
+} from "@/actions/swr-data";
 import { NAV_ICONS, type AppNavItem } from "@/components/layout/nav-items";
 import { UnreadDot } from "@/components/layout/unread-dot";
+import { swrKeys } from "@/lib/swr/keys";
 import { cn } from "@/lib/utils";
+
+function preloadRoute(href: string) {
+  if (href.startsWith("/home")) {
+    void preload(swrKeys.homeDashboard, fetchHomeDashboard);
+    return;
+  }
+  if (href.startsWith("/classes")) {
+    void preload(swrKeys.classesBoard, fetchClassesBoard);
+    return;
+  }
+  if (href.startsWith("/checkin")) {
+    void preload(swrKeys.checkinStudent, fetchStudentCheckin);
+    void preload(swrKeys.checkinStaff, fetchStaffCheckin);
+  }
+}
 
 export function BottomNav({
   items,
@@ -31,6 +54,9 @@ export function BottomNav({
               <li key={href} className="relative flex justify-center">
                 <Link
                   href={href}
+                  onTouchStart={() => preloadRoute(href)}
+                  onMouseEnter={() => preloadRoute(href)}
+                  onFocus={() => preloadRoute(href)}
                   className="group -mt-8 flex flex-col items-center gap-1"
                   aria-label={label}
                 >
@@ -73,6 +99,9 @@ export function BottomNav({
             <li key={href}>
               <Link
                 href={href}
+                onTouchStart={() => preloadRoute(href)}
+                onMouseEnter={() => preloadRoute(href)}
+                onFocus={() => preloadRoute(href)}
                 className={cn(
                   "relative flex min-h-11 flex-col items-center justify-center gap-1 pb-0.5 text-[10px] tracking-wide",
                   active

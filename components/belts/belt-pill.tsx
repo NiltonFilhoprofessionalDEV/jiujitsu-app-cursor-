@@ -1,3 +1,5 @@
+"use client";
+
 import { beltNeedsDarkInk, beltSwatch } from "@/lib/belts/colors";
 import { cn } from "@/lib/utils";
 

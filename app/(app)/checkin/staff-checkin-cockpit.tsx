@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import type { StaffCheckinBoard } from "@/actions/attendance";
 import { OpenSessionButton } from "@/app/(app)/classes/open-session-button";

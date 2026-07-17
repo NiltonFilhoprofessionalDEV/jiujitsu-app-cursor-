@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import type { AcademyMemberRow } from "@/actions/members";
 import { BeltPill } from "@/components/belts/belt-pill";
