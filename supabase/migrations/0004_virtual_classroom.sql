@@ -78,6 +78,13 @@ create policy class_members_insert_staff on public.class_members
           array['owner', 'administrator', 'instructor']::public.member_role[]
         )
     )
+    and exists (
+      select 1
+      from public.academy_members am
+      join public.classes c on c.id = class_id
+      where am.id = member_id
+        and am.academy_id = c.academy_id
+    )
   );
 
 create policy class_members_delete_staff on public.class_members
