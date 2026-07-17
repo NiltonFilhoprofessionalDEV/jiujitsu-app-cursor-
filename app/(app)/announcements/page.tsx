@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
 import { AnnouncementsFilterBar } from "./announcements-filter-bar";
-import { NewAnnouncementSheet } from "./new-announcement-sheet";
+import { NewAnnouncementSheetLazy as NewAnnouncementSheet } from "./new-announcement-sheet-lazy";
 
 function formatDateTime(iso: string): string {
   const d = new Date(iso);

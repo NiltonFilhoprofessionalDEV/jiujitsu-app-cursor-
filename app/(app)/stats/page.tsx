@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getStatsCharts } from "@/actions/dashboard";
-import { StatsCharts } from "@/components/dashboard/stats-charts";
+import { StatsChartsLazy as StatsCharts } from "@/components/dashboard/stats-charts-lazy";
 import { PageHeader } from "@/components/layout/page-header";
 import { getActiveAcademyBrief } from "@/lib/academy/active";
 import { getActiveMembership } from "@/lib/permissions/assert";

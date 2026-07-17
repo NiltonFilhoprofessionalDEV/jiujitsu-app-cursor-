@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
 import { createClient } from "@/lib/supabase/server";
@@ -20,32 +21,38 @@ function hasOwnRead(
   return Boolean(reads.profile_id);
 }
 
-export async function getUnreadBadges(): Promise<UnreadBadges> {
+/** Dedupes badge queries within a single RSC request (shell + header). */
+export const getUnreadBadges = cache(async (): Promise<UnreadBadges> => {
   try {
     const member = await getActiveMembership();
     const supabase = await createClient();
 
-    const { count: notificationsCount } = await supabase
+    const notificationsPromise = supabase
       .from("notifications")
       .select("id", { count: "exact", head: true })
       .eq("profile_id", member.profile_id)
       .eq("is_read", false);
 
-    let announcements = 0;
-    if (can(member.role, "view_announcements")) {
-      const withReads = await supabase
-        .from("announcements")
-        .select("id, announcement_reads(profile_id)")
-        .eq("academy_id", member.academy_id);
+    const announcementsPromise = can(member.role, "view_announcements")
+      ? supabase
+          .from("announcements")
+          .select("id, announcement_reads(profile_id)")
+          .eq("academy_id", member.academy_id)
+      : Promise.resolve({ data: null, error: null });
 
-      if (!withReads.error) {
-        announcements = (withReads.data ?? []).filter(
-          (row) => !hasOwnRead(row.announcement_reads),
-        ).length;
-      }
+    const [notificationsResult, announcementsResult] = await Promise.all([
+      notificationsPromise,
+      announcementsPromise,
+    ]);
+
+    let announcements = 0;
+    if (!announcementsResult.error && announcementsResult.data) {
+      announcements = announcementsResult.data.filter(
+        (row) => !hasOwnRead(row.announcement_reads),
+      ).length;
     }
 
-    const notifications = notificationsCount ?? 0;
+    const notifications = notificationsResult.count ?? 0;
     return {
       notifications,
       announcements,
@@ -54,4 +61,4 @@ export async function getUnreadBadges(): Promise<UnreadBadges> {
   } catch {
     return { notifications: 0, announcements: 0, total: 0 };
   }
-}
+});

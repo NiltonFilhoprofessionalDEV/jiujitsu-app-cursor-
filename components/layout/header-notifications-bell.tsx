@@ -1,20 +1,15 @@
-import { listNotifications } from "@/actions/notifications";
+import { getUnreadBadges } from "@/lib/inbox/unread";
 import { NotificationsGlassSheet } from "@/components/notifications/notifications-glass-sheet";
 
+/** Header bell: only unread count on paint; list loads when the sheet opens. */
 export async function HeaderNotificationsBell() {
-  let notifications: Awaited<ReturnType<typeof listNotifications>> = [];
-  try {
-    notifications = await listNotifications();
-  } catch {
-    notifications = [];
-  }
-
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
+  const badges = await getUnreadBadges();
 
   return (
     <NotificationsGlassSheet
-      initialNotifications={notifications}
-      unreadCount={unreadCount}
+      initialNotifications={[]}
+      unreadCount={badges.notifications}
+      loadOnOpen
     />
   );
 }

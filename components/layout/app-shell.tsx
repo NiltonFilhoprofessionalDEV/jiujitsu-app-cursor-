@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import {
   APP_NAV_ITEMS,
@@ -17,26 +18,35 @@ const EMPTY_BADGES: UnreadBadges = {
   total: 0,
 };
 
+async function TrophyCelebrationSlot({ enabled }: { enabled: boolean }) {
+  if (!enabled) return null;
+  const celebration = await getPendingTrophyCelebrations();
+  if (!celebration) return null;
+  return (
+    <TrophyCelebrationHost
+      memberId={celebration.memberId}
+      initialItems={celebration.items}
+    />
+  );
+}
+
 export async function AppShell({ children }: { children: React.ReactNode }) {
   let menuItems: ReturnType<typeof getVisibleMenuNavItems> = [];
   let navItems: ReturnType<typeof getAppNavItems> = APP_NAV_ITEMS;
-  let celebration: Awaited<ReturnType<typeof getPendingTrophyCelebrations>> =
-    null;
   let badges = EMPTY_BADGES;
+  let showCelebration = false;
 
   try {
     const membership = await getActiveMembership();
     menuItems = getVisibleMenuNavItems(membership.role);
     navItems = getAppNavItems(membership.role);
+    showCelebration = canAccessJourney(membership.role);
     badges = await getUnreadBadges();
-    if (canAccessJourney(membership.role)) {
-      celebration = await getPendingTrophyCelebrations();
-    }
   } catch {
     menuItems = [];
     navItems = APP_NAV_ITEMS;
-    celebration = null;
     badges = EMPTY_BADGES;
+    showCelebration = false;
   }
 
   return (
@@ -47,17 +57,14 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         badges={badges}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <main className="mx-auto w-full flex-1 px-4 pb-40 pt-4 lg:max-w-5xl lg:px-8 lg:pb-10 lg:pt-8">
+        <main className="mx-auto w-full flex-1 px-4 pb-44 pt-4 lg:max-w-5xl lg:px-8 lg:pb-10 lg:pt-8">
           {children}
         </main>
         <BottomNav items={navItems} menuHasUnread={badges.total > 0} />
       </div>
-      {celebration ? (
-        <TrophyCelebrationHost
-          memberId={celebration.memberId}
-          initialItems={celebration.items}
-        />
-      ) : null}
+      <Suspense fallback={null}>
+        <TrophyCelebrationSlot enabled={showCelebration} />
+      </Suspense>
     </div>
   );
 }

@@ -403,11 +403,18 @@ h2,
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply text-foreground;
-  }
   html {
     @apply font-sans;
+    /* App-like: no pinch/double-tap zoom; keep layout fitted to screen */
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
+  body {
+    @apply text-foreground;
+    touch-action: manipulation;
+    overscroll-behavior-y: none;
   }
 }
 

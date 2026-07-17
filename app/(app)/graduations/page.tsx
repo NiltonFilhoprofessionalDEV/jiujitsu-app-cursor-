@@ -8,7 +8,7 @@ import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
 import { GraduationHistoryCard } from "./graduation-history-card";
 import { GraduationsFilterBar } from "./graduations-filter-bar";
-import { NewGraduationSheet } from "./new-graduation-sheet";
+import { NewGraduationSheetLazy as NewGraduationSheet } from "./new-graduation-sheet-lazy";
 
 function withPreviousBelt(graduations: GraduationRow[]) {
   return graduations.map((graduation) => {

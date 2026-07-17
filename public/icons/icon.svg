@@ -1,6 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="BJJ Manager">
-  <rect width="512" height="512" rx="96" fill="#070b16"/>
-  <circle cx="256" cy="256" r="148" fill="none" stroke="#22c55e" stroke-width="28"/>
-  <path d="M170 300c28-70 144-70 172 0" fill="none" stroke="#22c55e" stroke-width="28" stroke-linecap="round"/>
-  <circle cx="256" cy="210" r="36" fill="#22c55e"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="BJJ Pulse">
+  <rect width="512" height="512" rx="108" fill="#ffffff"/>
+  <!-- pulse wave (red) -->
+  <path
+    d="M72 230 H140 L182 148 L248 318 L314 164 L352 230 H440"
+    fill="none"
+    stroke="#e10600"
+    stroke-width="36"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- black belt with red tip -->
+  <rect x="64" y="352" width="384" height="44" rx="10" fill="#0a0a0a"/>
+  <rect x="368" y="352" width="80" height="44" rx="10" fill="#e10600"/>
 </svg>

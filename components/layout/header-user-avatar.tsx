@@ -1,13 +1,13 @@
+import { cache } from "react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { createClient } from "@/lib/supabase/server";
 
-export async function HeaderUserAvatar() {
+const getHeaderProfile = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
   if (!user) return null;
 
   const { data: profile } = await supabase
@@ -16,7 +16,18 @@ export async function HeaderUserAvatar() {
     .eq("id", user.id)
     .maybeSingle();
 
-  const displayName = profile?.name ?? user.email ?? "Usuário";
+  return {
+    email: user.email ?? null,
+    name: profile?.name ?? null,
+    avatar_url: profile?.avatar_url ?? null,
+  };
+});
+
+export async function HeaderUserAvatar() {
+  const profile = await getHeaderProfile();
+  if (!profile) return null;
+
+  const displayName = profile.name ?? profile.email ?? "Usuário";
   const initial = displayName.slice(0, 1).toUpperCase();
 
   return (
@@ -30,7 +41,7 @@ export async function HeaderUserAvatar() {
         size="default"
         className="size-11 border border-border bg-card shadow-[var(--surface-shadow)]"
       >
-        {profile?.avatar_url ? (
+        {profile.avatar_url ? (
           <AvatarImage src={profile.avatar_url} alt={displayName} />
         ) : null}
         <AvatarFallback className="bg-[var(--action-red)]/20 font-display text-sm text-[var(--action-red)]">

@@ -45,7 +45,7 @@ export function NewAnnouncementSheet({
           "transition-[transform,box-shadow,filter] duration-200",
           "hover:brightness-110 active:scale-[0.97]",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--page-fab-bg)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-          "bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-4",
+          "bottom-[calc(6rem+env(safe-area-inset-bottom))] right-4",
           "lg:bottom-8 lg:right-8",
         )}
         aria-label="Novo aviso"

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="BJJ Pulse">
+  <rect width="512" height="512" fill="#ffffff"/>
+  <g transform="translate(56 56) scale(0.78)">
+    <path
+      d="M72 230 H140 L182 148 L248 318 L314 164 L352 230 H440"
+      fill="none"
+      stroke="#e10600"
+      stroke-width="36"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <rect x="64" y="352" width="384" height="44" rx="10" fill="#0a0a0a"/>
+    <rect x="368" y="352" width="80" height="44" rx="10" fill="#e10600"/>
+  </g>
+</svg>

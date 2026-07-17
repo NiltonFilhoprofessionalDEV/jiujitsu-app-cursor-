@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useOptimistic, useState, useTransition } from "react";
-import { Bell, CheckCheck, XIcon } from "lucide-react";
+import { Bell, CheckCheck, Loader2, XIcon } from "lucide-react";
 import {
+  listNotifications,
   markAllNotificationsRead,
   type NotificationRow,
 } from "@/actions/notifications";
@@ -20,13 +21,18 @@ import { cn } from "@/lib/utils";
 export function NotificationsGlassSheet({
   initialNotifications,
   unreadCount,
+  loadOnOpen = false,
 }: {
   initialNotifications: NotificationRow[];
   unreadCount: number;
+  /** When true, skip shipping the full list on every page; fetch when opened. */
+  loadOnOpen?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [loadingList, setLoadingList] = useState(false);
   const [items, setItems] = useState(initialNotifications);
+  const [loaded, setLoaded] = useState(!loadOnOpen);
   const [optimisticItems, setOptimistic] = useOptimistic(
     items,
     (
@@ -43,8 +49,37 @@ export function NotificationsGlassSheet({
   );
 
   useEffect(() => {
-    setItems(initialNotifications);
-  }, [initialNotifications]);
+    if (!loadOnOpen) {
+      setItems(initialNotifications);
+    }
+  }, [initialNotifications, loadOnOpen]);
+
+  useEffect(() => {
+    if (!open || !loadOnOpen || loaded) return;
+
+    let cancelled = false;
+    setLoadingList(true);
+    void listNotifications()
+      .then((rows) => {
+        if (!cancelled) {
+          setItems(rows);
+          setLoaded(true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setItems([]);
+          setLoaded(true);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingList(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, loadOnOpen, loaded]);
 
   const unread = optimisticItems.filter((n) => !n.is_read).length;
   const badgeCount = open ? unread : Math.max(unreadCount, unread);
@@ -97,13 +132,15 @@ export function NotificationsGlassSheet({
                 Notificações
               </SheetTitle>
               <SheetDescription className="mt-1 text-xs text-muted-foreground">
-                {unread > 0
-                  ? `${unread} não lida${unread > 1 ? "s" : ""}`
-                  : "Tudo em dia"}
+                {loadingList
+                  ? "Carregando…"
+                  : unread > 0
+                    ? `${unread} não lida${unread > 1 ? "s" : ""}`
+                    : "Tudo em dia"}
               </SheetDescription>
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              {unread > 0 ? (
+              {unread > 0 && !loadingList ? (
                 <button
                   type="button"
                   disabled={pending}
@@ -127,7 +164,12 @@ export function NotificationsGlassSheet({
         </SheetHeader>
 
         <div className="flex-1 space-y-2 overflow-y-auto px-4 py-4">
-          {optimisticItems.length === 0 ? (
+          {loadingList ? (
+            <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <p className="text-sm">Carregando notificações…</p>
+            </div>
+          ) : optimisticItems.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-card px-4 py-10 text-center">
               <Bell className="mx-auto h-8 w-8 text-muted-foreground/70" />
               <p className="mt-3 text-sm font-medium text-foreground">
