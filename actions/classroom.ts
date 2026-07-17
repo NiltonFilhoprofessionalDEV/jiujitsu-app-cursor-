@@ -115,7 +115,7 @@ export async function listVirtualLessons(
     query = query.eq("class_id", options.classId);
   }
 
-  const { data, error } = await query;
+  const { data, error } = await query.limit(100);
 
   if (error) {
     throw error;
@@ -253,6 +253,7 @@ export async function deleteVirtualLesson(
     }
 
     revalidatePath("/classroom");
+    revalidatePath(`/classroom/${lessonId}`);
     return { success: "Aula virtual removida." };
   } catch (err) {
     if (err instanceof PermissionError) {
