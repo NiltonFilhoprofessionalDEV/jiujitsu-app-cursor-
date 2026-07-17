@@ -104,7 +104,7 @@ export default async function HomePage() {
     <div className="space-y-6">
       <header className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
+          <h1 className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
             Home
           </h1>
           <p className="text-sm text-[var(--bjj-muted)]">
