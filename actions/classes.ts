@@ -14,6 +14,7 @@ import {
   createClassSchema,
   createScheduleSchema,
   createSchedulesBulkSchema,
+  deleteClassSchema,
   deleteScheduleDayOverrideSchema,
   deleteScheduleSchema,
   duplicateScheduleSchema,
@@ -397,6 +398,81 @@ export async function updateClass(
         err instanceof Error
           ? err.message
           : "Não foi possível atualizar a turma.",
+    };
+  }
+}
+
+export async function deleteClass(
+  _prevState: ClassActionState,
+  formData: FormData,
+): Promise<ClassActionState> {
+  try {
+    const actor = await assertCapability("manage_classes");
+
+    const parsed = deleteClassSchema.safeParse({
+      id: formData.get("id"),
+    });
+
+    if (!parsed.success) {
+      return { error: firstValidationError(parsed.error) };
+    }
+
+    const supabase = await createClient();
+    const { data: klass, error: fetchError } = await supabase
+      .from("classes")
+      .select("id, name")
+      .eq("id", parsed.data.id)
+      .eq("academy_id", actor.academy_id)
+      .maybeSingle();
+
+    if (fetchError) {
+      return { error: fetchError.message };
+    }
+    if (!klass) {
+      return { error: "Turma não encontrada." };
+    }
+
+    // Stop automation before removing / deactivating.
+    await supabase
+      .from("class_schedules")
+      .update({ auto_open_enabled: false })
+      .eq("class_id", parsed.data.id);
+
+    const { error: deleteError } = await supabase
+      .from("classes")
+      .delete()
+      .eq("id", parsed.data.id)
+      .eq("academy_id", actor.academy_id);
+
+    if (deleteError) {
+      const { error: softError } = await supabase
+        .from("classes")
+        .update({ is_active: false })
+        .eq("id", parsed.data.id)
+        .eq("academy_id", actor.academy_id);
+
+      if (softError) {
+        return { error: softError.message };
+      }
+
+      revalidatePath("/classes");
+      revalidatePath(`/classes/${parsed.data.id}`);
+      return {
+        success: `Turma "${klass.name}" inativada (há histórico vinculado).`,
+      };
+    }
+
+    revalidatePath("/classes");
+    return { success: `Turma "${klass.name}" excluída.` };
+  } catch (err) {
+    if (err instanceof PermissionError) {
+      return { error: "Sem permissão para gerenciar turmas." };
+    }
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "Não foi possível excluir a turma.",
     };
   }
 }

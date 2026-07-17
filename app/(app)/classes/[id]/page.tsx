@@ -12,6 +12,7 @@ import {
   type ScheduleDayOverrideRow,
 } from "@/actions/classes";
 import { resolveTimezone } from "@/lib/sessions/auto-open";
+import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
 import { createClient } from "@/lib/supabase/server";
@@ -129,9 +130,9 @@ export default async function ClassDetailPage({
         </Link>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
+            <BlackBeltTitle className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
               {klass.name}
-            </h1>
+            </BlackBeltTitle>
             {klass.description ? (
               <p className="mt-1 text-sm text-[var(--bjj-muted)]">
                 {klass.description}

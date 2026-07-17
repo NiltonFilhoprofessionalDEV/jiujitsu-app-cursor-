@@ -12,11 +12,21 @@ import { Label } from "@/components/ui/label";
 
 const initialState: AnnouncementActionState = null;
 
+const selectClassName =
+  "flex h-11 w-full rounded-xl border border-input bg-transparent px-3 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50";
+
+export type AnnouncementClassOption = {
+  id: string;
+  name: string;
+};
+
 export function NewAnnouncementForm({
+  classes,
   onSuccess,
 }: {
+  classes: AnnouncementClassOption[];
   onSuccess?: () => void;
-} = {}) {
+}) {
   const [state, formAction, pending] = useActionState(
     createAnnouncement,
     initialState,
@@ -32,6 +42,28 @@ export function NewAnnouncementForm({
 
   return (
     <form action={formAction} className="space-y-4">
+      <input type="hidden" name="notify_members" value="on" />
+
+      <div className="space-y-2">
+        <Label htmlFor="class_id">Turma</Label>
+        <select
+          id="class_id"
+          name="class_id"
+          defaultValue=""
+          className={selectClassName}
+        >
+          <option value="">Toda a academia</option>
+          {classes.map((klass) => (
+            <option key={klass.id} value={klass.id}>
+              {klass.name}
+            </option>
+          ))}
+        </select>
+        <p className="text-[11px] text-muted-foreground">
+          Se escolher uma turma, só ela vê o aviso e recebe a notificação.
+        </p>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="title">Título *</Label>
         <Input id="title" name="title" required className="h-11" />
@@ -43,19 +75,15 @@ export function NewAnnouncementForm({
           name="description"
           required
           rows={4}
-          className="flex w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="flex w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm text-foreground shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
         />
       </div>
-      <label className="flex items-center gap-2 text-sm text-muted-foreground">
-        <input
-          type="checkbox"
-          name="notify_members"
-          value="on"
-          defaultChecked
-          className="h-4 w-4 rounded border-white/20"
-        />
-        Notificar membros ativos
-      </label>
+
+      <p className="rounded-xl border border-border bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
+        Ao publicar, o aviso também aparece em <strong>Notificações</strong>{" "}
+        para os destinatários.
+      </p>
+
       <Button
         type="submit"
         className="h-11 w-full bg-[var(--page-fab-bg)] text-[var(--page-fab-fg)]"

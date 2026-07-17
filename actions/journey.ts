@@ -290,6 +290,69 @@ export type TrophyCelebrationItem = {
   title: string;
 };
 
+export type GraduationCelebrationItem = {
+  id: string;
+  kind: "belt" | "degree";
+  belt: string;
+  degree: number;
+  title: string;
+  label: string;
+  message: string;
+};
+
+function graduationCongrats(kind: "belt" | "degree", belt: string): string {
+  if (kind === "degree") {
+    return `Mais um grau na faixa ${belt}. Persistência no tatame tem nome — o seu.`;
+  }
+  const lines: Record<string, string> = {
+    Branca: "A jornada começa. Cada aula agora escreve a sua história.",
+    Cinza: "Primeiros passos firmes. Continue aparecendo no tatame.",
+    Amarela: "Base crescendo. Disciplina já aparece no seu jogo.",
+    Laranja: "Ritmo de quem treina de verdade. Segue firme.",
+    Verde: "Fundação sólida. Você está construindo o próximo nível.",
+    Azul: "Entrada no mundo adulto do jiu-jitsu. Respeito conquistado.",
+    Roxa: "Maturidade no jogo. Poucos chegam aqui sem constância.",
+    Marrom: "Quase no topo. Sua presença já inspira a academia.",
+    Preta: "Faixa preta. Sonho de muitos, realidade de poucos — e você chegou.",
+    Coral: "Legado vivo. Sua trajetória marca gerações no tatame.",
+    Vermelha: "Cume da montanha. Honra ao caminho que você trilhou.",
+  };
+  return (
+    lines[belt] ??
+    `Nova faixa ${belt}. O tatame reconhece quem não desiste.`
+  );
+}
+
+function classifyGraduationCelebration(input: {
+  id: string;
+  belt: string;
+  degree: number;
+  previous: { belt: string; degree: number } | null;
+}): GraduationCelebrationItem {
+  const kind: "belt" | "degree" =
+    !input.previous || input.previous.belt !== input.belt
+      ? "belt"
+      : "degree";
+
+  const title = kind === "belt" ? "Nova faixa!" : "Novo grau!";
+  const label =
+    kind === "belt"
+      ? input.degree > 0
+        ? `Faixa ${input.belt} · ${input.degree}º grau`
+        : `Faixa ${input.belt}`
+      : `${input.degree}º grau · ${input.belt}`;
+
+  return {
+    id: input.id,
+    kind,
+    belt: input.belt,
+    degree: input.degree,
+    title,
+    label,
+    message: graduationCongrats(kind, input.belt),
+  };
+}
+
 export async function getPendingTrophyCelebrations(): Promise<{
   memberId: string;
   items: TrophyCelebrationItem[];
@@ -322,6 +385,64 @@ export async function getPendingTrophyCelebrations(): Promise<{
         label: milestone.label,
         title: trophyTitle(milestone),
       });
+    }
+
+    return { memberId: membership.id, items };
+  } catch {
+    return null;
+  }
+}
+
+export async function getPendingGraduationCelebrations(): Promise<{
+  memberId: string;
+  items: GraduationCelebrationItem[];
+} | null> {
+  try {
+    const membership = await getActiveMembership();
+    if (!canAccessJourney(membership.role)) return null;
+
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from("graduation_history")
+      .select("id, belt, degree, graduated_at")
+      .eq("member_id", membership.id)
+      .order("graduated_at", { ascending: true })
+      .order("id", { ascending: true });
+
+    if (error) return null;
+
+    const history = (data ?? []).map((row) => ({
+      id: row.id as string,
+      belt: row.belt as string,
+      degree: Number(row.degree ?? 0),
+      graduated_at: row.graduated_at as string,
+    }));
+
+    const items: GraduationCelebrationItem[] = [];
+    let previous: { belt: string; degree: number } | null = null;
+
+    for (const row of history) {
+      const at = new Date(
+        row.graduated_at.includes("T")
+          ? row.graduated_at
+          : `${row.graduated_at}T12:00:00`,
+      ).getTime();
+      const inWindow =
+        !Number.isNaN(at) && at >= Date.now() - CELEBRATION_WINDOW_MS;
+
+      if (inWindow) {
+        items.push(
+          classifyGraduationCelebration({
+            id: row.id,
+            belt: row.belt,
+            degree: row.degree,
+            previous,
+          }),
+        );
+      }
+
+      previous = { belt: row.belt, degree: row.degree };
     }
 
     return { memberId: membership.id, items };

@@ -64,7 +64,7 @@ describe("capabilities", () => {
 });
 
 describe("getAppNavItems", () => {
-  it("orders student tabs with Vídeos", () => {
+  it("orders student tabs with Galeria", () => {
     expect(getAppNavItems("student").map((i) => i.href)).toEqual([
       "/journey",
       "/classes",
@@ -73,7 +73,7 @@ describe("getAppNavItems", () => {
       "/menu",
     ]);
     expect(getAppNavItems("student").find((i) => i.href === "/classroom")?.label).toBe(
-      "Vídeos",
+      "Galeria",
     );
   });
 

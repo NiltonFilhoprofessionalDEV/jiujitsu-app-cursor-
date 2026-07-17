@@ -76,6 +76,11 @@ export const createLessonCommentSchema = z.object({
     .trim()
     .min(1, "Escreva um comentário")
     .max(1000, "Comentário muito longo"),
+  parent_id: z
+    .string()
+    .trim()
+    .transform((v) => (v === "" ? undefined : v))
+    .pipe(z.string().uuid().optional()),
 });
 
 export type CreateVirtualLessonInput = z.infer<

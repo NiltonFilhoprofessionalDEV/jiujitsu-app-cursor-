@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { logout } from "@/actions/auth";
+import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 import { Button } from "@/components/ui/button";
 import { isPlatformAdminEmail } from "@/lib/platform-admin";
 import { createClient } from "@/lib/supabase/server";
@@ -17,9 +18,9 @@ export default async function WaitingAcademyPage() {
         <p className="text-2xl font-bold tracking-tight text-foreground">
           BJJ Pulse
         </p>
-        <h1 className="text-lg font-medium text-muted-foreground">
+        <BlackBeltTitle className="text-lg font-medium text-muted-foreground">
           Quase lá
-        </h1>
+        </BlackBeltTitle>
         <p className="text-sm text-muted-foreground">
           Para entrar, peça o <strong>link de convite</strong> da sua academia.
           Novas academias só são criadas com um convite de dono.

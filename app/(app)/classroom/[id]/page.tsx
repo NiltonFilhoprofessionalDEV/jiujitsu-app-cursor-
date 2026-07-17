@@ -5,11 +5,14 @@ import {
   getVirtualLesson,
   listLessonComments,
 } from "@/actions/classroom";
+import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 import { lessonCategoryLabel } from "@/lib/classroom/categories";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
+import { LessonActionsMenu } from "../lesson-actions-menu";
 import { LessonComments } from "../lesson-comments";
 import { LessonFavoriteButton } from "../lesson-favorite-button";
+import { LessonLikeButton } from "../lesson-like-button";
 import { YoutubePlayer } from "./youtube-player";
 
 export default async function ClassroomLessonPage({
@@ -28,6 +31,7 @@ export default async function ClassroomLessonPage({
     redirect("/home");
   }
 
+  const canManage = can(membership.role, "manage_virtual_lessons");
   const { id } = await params;
   const [lesson, comments] = await Promise.all([
     getVirtualLesson(id),
@@ -43,12 +47,22 @@ export default async function ClassroomLessonPage({
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar para Vídeos
+          Voltar para Galeria
         </Link>
-        <LessonFavoriteButton
-          lessonId={lesson.id}
-          initialFavorite={lesson.is_favorite}
-        />
+        <div className="flex items-center gap-2">
+          <LessonLikeButton
+            lessonId={lesson.id}
+            initialLiked={lesson.is_liked}
+            initialCount={lesson.like_count}
+          />
+          <LessonFavoriteButton
+            lessonId={lesson.id}
+            initialFavorite={lesson.is_favorite}
+          />
+          {canManage ? (
+            <LessonActionsMenu lessonId={lesson.id} title={lesson.title} />
+          ) : null}
+        </div>
       </div>
 
       <YoutubePlayer
@@ -57,9 +71,9 @@ export default async function ClassroomLessonPage({
         title={lesson.title}
       />
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
+        <BlackBeltTitle className="font-display text-2xl tracking-[0.06em] text-[var(--bjj-text)]">
           {lesson.title}
-        </h1>
+        </BlackBeltTitle>
         {lesson.description ? (
           <p className="whitespace-pre-wrap text-sm text-muted-foreground">
             {lesson.description}
@@ -71,6 +85,9 @@ export default async function ClassroomLessonPage({
             : ""}
           {lesson.class_name ? `${lesson.class_name} · ` : ""}
           Por {lesson.created_by_name}
+          {lesson.like_count > 0
+            ? ` · ${lesson.like_count} curtida${lesson.like_count === 1 ? "" : "s"}`
+            : ""}
         </p>
       </header>
 

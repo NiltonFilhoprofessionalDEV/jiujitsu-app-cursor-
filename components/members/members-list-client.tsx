@@ -56,7 +56,11 @@ export function MembersListClient({
           </div>
         ) : (
           members.map((member) => (
-            <MemberListCard key={member.id} member={member} />
+            <MemberListCard
+              key={member.id}
+              member={member}
+              canManage={canManage}
+            />
           ))
         )}
       </div>

@@ -270,8 +270,8 @@ export function ClassScheduleBoard({
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0 space-y-2">
               <Label htmlFor="start_time">Início</Label>
               <Input
                 id="start_time"
@@ -281,10 +281,10 @@ export function ClassScheduleBoard({
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 disabled={addPending}
-                className="h-11"
+                className="h-11 w-full min-w-0 max-w-full"
               />
             </div>
-            <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <Label htmlFor="end_time">Fim</Label>
               <Input
                 id="end_time"
@@ -294,7 +294,7 @@ export function ClassScheduleBoard({
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
                 disabled={addPending}
-                className="h-11"
+                className="h-11 w-full min-w-0 max-w-full"
               />
             </div>
           </div>

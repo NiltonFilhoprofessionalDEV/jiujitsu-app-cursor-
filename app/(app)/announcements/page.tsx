@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { listAnnouncements } from "@/actions/announcements";
+import { listClasses } from "@/actions/classes";
 import { AnnouncementCard } from "@/components/announcements/announcement-card";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -40,8 +41,15 @@ export default async function AnnouncementsPage({
 
   let announcements: Awaited<ReturnType<typeof listAnnouncements>> = [];
   let listError: string | null = null;
+  let classOptions: { id: string; name: string }[] = [];
   try {
     announcements = await listAnnouncements();
+    if (canManage) {
+      const classes = await listClasses();
+      classOptions = classes
+        .filter((c) => c.is_active)
+        .map((c) => ({ id: c.id, name: c.name }));
+    }
   } catch (err) {
     if (err instanceof Error && err.message.includes("No active academy")) {
       redirect("/select-academy");
@@ -120,6 +128,8 @@ export default async function AnnouncementsPage({
               description={a.description}
               createdAtLabel={formatDateTime(a.created_at)}
               authorName={a.created_by_name}
+              turmaName={a.class_name}
+              classId={a.class_id}
               initialRead={a.is_read}
               canManage={canManage}
             />
@@ -128,7 +138,10 @@ export default async function AnnouncementsPage({
       </section>
 
       {canManage ? (
-        <NewAnnouncementSheet defaultOpen={params.new === "1"} />
+        <NewAnnouncementSheet
+          classes={classOptions}
+          defaultOpen={params.new === "1"}
+        />
       ) : null}
     </div>
   );

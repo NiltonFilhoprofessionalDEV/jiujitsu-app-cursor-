@@ -6,6 +6,7 @@ import { Play } from "lucide-react";
 
 import { listClasses } from "@/actions/classes";
 import { listVirtualLessons } from "@/actions/classroom";
+import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 import {
   LESSON_CATEGORIES,
   lessonCategoryLabel,
@@ -69,9 +70,9 @@ export default async function ClassroomPage({
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
-          Vídeos
-        </h1>
+        <BlackBeltTitle className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
+          Galeria de vídeos
+        </BlackBeltTitle>
         <p className="text-sm text-[var(--bjj-muted)]">
           Aulas em vídeo da academia
         </p>

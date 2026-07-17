@@ -36,20 +36,42 @@ export const getUnreadBadges = cache(async (): Promise<UnreadBadges> => {
     const announcementsPromise = can(member.role, "view_announcements")
       ? supabase
           .from("announcements")
-          .select("id, announcement_reads(profile_id)")
+          .select("id, class_id, announcement_reads(profile_id)")
           .eq("academy_id", member.academy_id)
       : Promise.resolve({ data: null, error: null });
 
-    const [notificationsResult, announcementsResult] = await Promise.all([
-      notificationsPromise,
-      announcementsPromise,
-    ]);
+    const enrolledPromise =
+      member.role === "student" || member.role === "guardian"
+        ? supabase
+            .from("class_members")
+            .select("class_id")
+            .eq("member_id", member.id)
+        : Promise.resolve({ data: null, error: null });
+
+    const [notificationsResult, announcementsResult, enrolledResult] =
+      await Promise.all([
+        notificationsPromise,
+        announcementsPromise,
+        enrolledPromise,
+      ]);
+
+    const enrolledClassIds = new Set(
+      (enrolledResult.data ?? []).map((row) => row.class_id as string),
+    );
 
     let announcements = 0;
     if (!announcementsResult.error && announcementsResult.data) {
-      announcements = announcementsResult.data.filter(
-        (row) => !hasOwnRead(row.announcement_reads),
-      ).length;
+      announcements = announcementsResult.data.filter((row) => {
+        const classId = (row as { class_id?: string | null }).class_id ?? null;
+        if (
+          (member.role === "student" || member.role === "guardian") &&
+          classId &&
+          !enrolledClassIds.has(classId)
+        ) {
+          return false;
+        }
+        return !hasOwnRead(row.announcement_reads);
+      }).length;
     }
 
     const notifications = notificationsResult.count ?? 0;

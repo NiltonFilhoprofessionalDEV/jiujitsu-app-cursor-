@@ -5,6 +5,7 @@ import {
   createAcademy,
   type AcademyActionState,
 } from "@/actions/academies";
+import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,9 +24,9 @@ export function CreateAcademyForm() {
         <p className="text-2xl font-bold tracking-tight text-foreground">
           BJJ Pulse
         </p>
-        <h1 className="text-lg font-medium text-muted-foreground">
+        <BlackBeltTitle className="text-lg font-medium text-muted-foreground">
           Criar sua academia
-        </h1>
+        </BlackBeltTitle>
         <p className="text-sm text-muted-foreground">
           Configure os dados principais. Você será o Owner.
         </p>

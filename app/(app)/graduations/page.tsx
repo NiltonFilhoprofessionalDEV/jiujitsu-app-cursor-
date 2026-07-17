@@ -4,27 +4,15 @@ import { listGraduations } from "@/actions/graduations";
 import { listMembers } from "@/actions/members";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import { withPreviousBelt } from "@/lib/graduations/with-previous-belt";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
 import { GraduationHistoryCard } from "./graduation-history-card";
 import { GraduationsFilterBar } from "./graduations-filter-bar";
+import { GraduationsPagination } from "./graduations-pagination";
 import { NewGraduationSheetLazy as NewGraduationSheet } from "./new-graduation-sheet-lazy";
 
-function withPreviousBelt(graduations: GraduationRow[]) {
-  return graduations.map((graduation) => {
-    const siblings = graduations.filter(
-      (item) => item.member_id === graduation.member_id,
-    );
-    const index = siblings.findIndex((item) => item.id === graduation.id);
-    const previous = index >= 0 ? siblings[index + 1] : undefined;
-
-    return {
-      ...graduation,
-      previous_belt: previous?.belt ?? null,
-      previous_degree: previous?.degree ?? null,
-    };
-  });
-}
+const PAGE_SIZE = 12;
 
 function applyFilters(
   graduations: ReturnType<typeof withPreviousBelt>,
@@ -40,6 +28,22 @@ function applyFilters(
   });
 }
 
+function sortNewestFirst<T extends { graduated_at: string; id: string }>(
+  items: T[],
+): T[] {
+  return [...items].sort((a, b) => {
+    const byDate = b.graduated_at.localeCompare(a.graduated_at);
+    if (byDate !== 0) return byDate;
+    return b.id.localeCompare(a.id);
+  });
+}
+
+function parsePage(raw: string | undefined): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.floor(n);
+}
+
 export default async function GraduationsPage({
   searchParams,
 }: {
@@ -50,6 +54,7 @@ export default async function GraduationsPage({
     belt?: string;
     from?: string;
     to?: string;
+    page?: string;
   }>;
 }) {
   let membership;
@@ -86,12 +91,20 @@ export default async function GraduationsPage({
   }));
 
   const withPrevious = withPreviousBelt(graduations);
-  const filtered = applyFilters(withPrevious, {
-    q: params.q,
-    belt: params.belt,
-    from: params.from,
-    to: params.to,
-  });
+  const filtered = sortNewestFirst(
+    applyFilters(withPrevious, {
+      q: params.q,
+      belt: params.belt,
+      from: params.from,
+      to: params.to,
+    }),
+  );
+
+  const totalItems = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const page = Math.min(parsePage(params.page), totalPages);
+  const start = (page - 1) * PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + PAGE_SIZE);
 
   const hasActiveFilters = Boolean(
     params.q?.trim() || params.belt || params.from || params.to,
@@ -103,7 +116,11 @@ export default async function GraduationsPage({
     <div className="space-y-5">
       <PageHeader
         title="Graduações"
-        description="Histórico permanente — faixas nunca somem"
+        description={
+          canGraduate
+            ? "Histórico de faixas — edite ou apague se errar"
+            : "Histórico permanente de faixas e graus"
+        }
       />
 
       <GraduationsFilterBar
@@ -121,11 +138,11 @@ export default async function GraduationsPage({
             Histórico
           </p>
           <p className="text-[10px] tabular-nums text-muted-foreground">
-            {filtered.length}
+            {totalItems}
           </p>
         </div>
 
-        {filtered.length === 0 ? (
+        {totalItems === 0 ? (
           <EmptyState
             title={
               hasActiveFilters
@@ -149,12 +166,27 @@ export default async function GraduationsPage({
             }
           />
         ) : (
-          filtered.map((graduation) => (
-            <GraduationHistoryCard
-              key={graduation.id}
-              graduation={graduation}
+          <>
+            {pageItems.map((graduation) => (
+              <GraduationHistoryCard
+                key={graduation.id}
+                graduation={graduation}
+                canManage={canGraduate}
+              />
+            ))}
+            <GraduationsPagination
+              page={page}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={PAGE_SIZE}
+              query={{
+                q: params.q,
+                belt: params.belt,
+                from: params.from,
+                to: params.to,
+              }}
             />
-          ))
+          </>
         )}
       </section>
 

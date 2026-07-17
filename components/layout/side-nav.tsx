@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { logout } from "@/actions/auth";
+import { BrandWordmark } from "@/components/brand/brand-wordmark";
 import {
   NAV_ICONS,
   type AppNavItem,
@@ -33,27 +34,16 @@ export function SideNav({
       className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-border px-3 py-6 lg:flex"
       style={{ background: "var(--nav-bg)" }}
     >
-      <div className="px-3 pb-6">
-        <p className="font-display text-2xl tracking-[0.08em] text-[var(--bjj-text)]">
-          <span
-            className="text-black"
-            style={{
-              WebkitTextStroke: "1px rgba(255, 255, 255, 0.5)",
-              paintOrder: "stroke fill",
-            }}
-          >
-            B
-          </span>
-          <span className="text-[var(--action-red)]">J</span>
-          <span className="text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
-            J
-          </span>
-          <span className="text-[var(--bjj-text)]"> Pulse</span>
-        </p>
-        <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+      <Link
+        href="/home"
+        className="group mb-2 block rounded-xl px-3 pb-5 pt-1 outline-none transition hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label="BJJ Pulse — início"
+      >
+        <BrandWordmark className="text-2xl leading-none tracking-[0.06em]" />
+        <p className="mt-1.5 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           Painel web
         </p>
-      </div>
+      </Link>
 
       <nav
         className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto"
@@ -111,9 +101,7 @@ export function SideNav({
             {menuItems.map(({ href, label, icon, badgeKey }) => {
               const Icon = NAV_ICONS[icon];
               const active = pathname.startsWith(href);
-              const hasBadge = Boolean(
-                badgeKey && badges[badgeKey] > 0,
-              );
+              const hasBadge = Boolean(badgeKey && badges[badgeKey] > 0);
               return (
                 <Link
                   key={href}

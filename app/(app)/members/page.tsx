@@ -5,7 +5,6 @@ import { MembersListClient } from "@/components/members/members-list-client";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
 import { MembersFilterBar } from "./members-filter-bar";
-import { MembersInvitePanel } from "./members-invite-panel";
 
 type SearchParams = Promise<{
   role?: string;
@@ -73,8 +72,6 @@ export default async function MembersPage({
           belt: params.belt,
         }}
       />
-
-      {canManage ? <MembersInvitePanel /> : null}
 
       <MembersListClient
         initialMembers={members}

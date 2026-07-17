@@ -1,4 +1,5 @@
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
+import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 import { LoginForm } from "./login-form";
 
 type SearchParams = Promise<{ next?: string }>;
@@ -21,9 +22,9 @@ export default async function LoginPage({
       <header className="space-y-4 text-center">
         <BrandWordmark />
         <div className="auth-rise auth-rise-delay mx-auto h-px w-16 bg-[var(--action-red)]" />
-        <h1 className="auth-rise auth-rise-delay-2 text-sm font-medium uppercase tracking-[0.22em] text-muted-foreground">
+        <BlackBeltTitle className="auth-rise auth-rise-delay-2 text-sm font-medium uppercase tracking-[0.22em] text-muted-foreground">
           Entrar na sua conta
-        </h1>
+        </BlackBeltTitle>
       </header>
       <LoginForm next={next} />
     </div>

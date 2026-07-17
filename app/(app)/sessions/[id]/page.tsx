@@ -6,6 +6,7 @@ import {
   listSessionPresent,
 } from "@/actions/attendance";
 import { getSession } from "@/actions/sessions";
+import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
 import { CloseSessionButton } from "../close-session-button";
@@ -67,9 +68,9 @@ export default async function SessionPage({ params }: { params: Params }) {
         </Link>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
+            <BlackBeltTitle className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
               {session.class_name ?? "Aula"}
-            </h1>
+            </BlackBeltTitle>
             <p className="mt-1 text-sm text-[var(--bjj-muted)]">
               {session.date}
               {session.started_at

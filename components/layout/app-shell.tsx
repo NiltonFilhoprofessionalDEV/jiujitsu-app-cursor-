@@ -6,8 +6,12 @@ import {
   getVisibleMenuNavItems,
 } from "@/components/layout/nav-items";
 import { SideNav } from "@/components/layout/side-nav";
+import { GraduationCelebrationHost } from "@/components/journey/graduation-celebration";
 import { TrophyCelebrationHost } from "@/components/journey/trophy-celebration";
-import { getPendingTrophyCelebrations } from "@/actions/journey";
+import {
+  getPendingGraduationCelebrations,
+  getPendingTrophyCelebrations,
+} from "@/actions/journey";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { canAccessJourney } from "@/lib/journey/nav";
 import { getUnreadBadges, type UnreadBadges } from "@/lib/inbox/unread";
@@ -24,6 +28,18 @@ async function TrophyCelebrationSlot({ enabled }: { enabled: boolean }) {
   if (!celebration) return null;
   return (
     <TrophyCelebrationHost
+      memberId={celebration.memberId}
+      initialItems={celebration.items}
+    />
+  );
+}
+
+async function GraduationCelebrationSlot({ enabled }: { enabled: boolean }) {
+  if (!enabled) return null;
+  const celebration = await getPendingGraduationCelebrations();
+  if (!celebration) return null;
+  return (
+    <GraduationCelebrationHost
       memberId={celebration.memberId}
       initialItems={celebration.items}
     />
@@ -68,6 +84,9 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <Suspense fallback={null}>
         <TrophyCelebrationSlot enabled={showCelebration} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <GraduationCelebrationSlot enabled={showCelebration} />
       </Suspense>
     </div>
   );

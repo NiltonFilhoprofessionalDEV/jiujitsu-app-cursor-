@@ -67,7 +67,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
 
 /**
  * Role-aware primary nav.
- * Student: Jornada → Turmas → Check-in → Vídeos → Menu
+ * Student: Jornada → Turmas → Check-in → Galeria → Menu
  * Staff: Home → Turmas → Check-in → Jornada → Menu (Stats no Menu)
  */
 export function getAppNavItems(role: MemberRole): AppNavItem[] {
@@ -79,7 +79,7 @@ export function getAppNavItems(role: MemberRole): AppNavItem[] {
       { href: "/journey", label: "Jornada", icon: "journey" },
       { href: "/classes", label: "Turmas", icon: "classes" },
       { href: "/checkin", label: "Check-in", icon: "checkin", fab: true },
-      { href: "/classroom", label: "Vídeos", icon: "classroom" },
+      { href: "/classroom", label: "Galeria", icon: "classroom" },
       { href: "/menu", label: "Menu", icon: "menu" },
     ];
   }
@@ -133,9 +133,9 @@ export const MENU_NAV_ITEMS: MenuNavItem[] = [
   },
   {
     href: "/classroom",
-    label: "Vídeos",
+    label: "Galeria de vídeos",
     icon: "classroom",
-    // Pure students already have Vídeos in the bottom nav.
+    // Pure students already have Galeria in the bottom nav.
     canShow: (role) =>
       can(role, "view_virtual_lessons") &&
       (!can(role, "view_own_journey") || can(role, "view_teaching_journey")),

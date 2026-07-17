@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
 import type { MemberRole } from "@/types/domain";
+import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 import { NewMemberForm } from "../new-member-form";
 
 function assignableRoles(actorRole: MemberRole): MemberRole[] {
@@ -52,11 +53,11 @@ export default async function NewMemberPage() {
         >
           ← Membros
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
-          Novo membro
-        </h1>
+        <BlackBeltTitle className="font-display text-2xl tracking-[0.06em] text-[var(--bjj-text)]">
+          Novo aluno
+        </BlackBeltTitle>
         <p className="text-sm text-[var(--bjj-muted)]">
-          Associe uma conta existente à academia pelo e-mail
+          Cadastre na academia e envie o acesso por WhatsApp ou e-mail
         </p>
       </header>
 

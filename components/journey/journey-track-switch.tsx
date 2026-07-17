@@ -17,13 +17,13 @@ export function JourneyTrackSwitch({
   if (availableTracks.length < 2) return null;
 
   return (
-    <div className="grid grid-cols-2 gap-1 rounded-2xl border border-border bg-card p-1 shadow-[var(--surface-shadow)]">
+    <div className="grid grid-cols-2 gap-1 rounded-2xl border border-border bg-card p-1.5 shadow-[var(--surface-shadow)] sm:p-1">
       {availableTracks.map((option) => (
         <Link
           key={option}
           href={`/journey?mode=${option}`}
           className={cn(
-            "rounded-xl px-3 py-2.5 text-center text-sm font-medium transition",
+            "rounded-xl px-3 py-3.5 text-center text-base font-medium transition sm:py-2.5 sm:text-sm",
             track === option
               ? "bg-[var(--action-red)] text-primary-foreground"
               : "text-muted-foreground hover:bg-muted hover:text-foreground",

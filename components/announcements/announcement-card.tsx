@@ -37,6 +37,8 @@ export function AnnouncementCard({
   description,
   createdAtLabel,
   authorName,
+  turmaName = null,
+  classId = null,
   initialRead,
   canManage = false,
 }: {
@@ -45,6 +47,8 @@ export function AnnouncementCard({
   description: string;
   createdAtLabel: string;
   authorName: string;
+  turmaName?: string | null;
+  classId?: string | null;
   initialRead: boolean;
   canManage?: boolean;
 }) {
@@ -117,6 +121,11 @@ export function AnnouncementCard({
                   />
                 ) : null}
               </div>
+              {turmaName ? (
+                <p className="mt-1 text-[11px] font-medium text-[var(--action-red)]">
+                  {turmaName}
+                </p>
+              ) : null}
             </button>
 
             <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
@@ -204,6 +213,7 @@ export function AnnouncementCard({
             id={id}
             title={title}
             description={description}
+            classId={classId}
           />
           <DeleteAnnouncementDialog
             open={deleteOpen}
@@ -281,12 +291,14 @@ function EditAnnouncementDialog({
   id,
   title,
   description,
+  classId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   id: string;
   title: string;
   description: string;
+  classId: string | null;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState<
@@ -314,6 +326,7 @@ function EditAnnouncementDialog({
 
         <form ref={formRef} action={formAction} className="space-y-4">
           <input type="hidden" name="id" value={id} />
+          <input type="hidden" name="class_id" value={classId ?? ""} />
           <div className="space-y-2">
             <Label htmlFor={`edit-title-${id}`}>Título</Label>
             <Input

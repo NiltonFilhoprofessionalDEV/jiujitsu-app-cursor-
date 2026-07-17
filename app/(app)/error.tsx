@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 
 export default function AppError({
   error,
@@ -16,9 +17,9 @@ export default function AppError({
 
   return (
     <div className="mx-auto flex min-h-[70dvh] w-full max-w-lg flex-col items-center justify-center gap-4 px-4 text-center">
-      <h1 className="font-display text-2xl tracking-[0.08em] text-foreground">
+      <BlackBeltTitle className="font-display text-2xl tracking-[0.08em] text-foreground">
         Não foi possível abrir
-      </h1>
+      </BlackBeltTitle>
       <p className="max-w-sm text-base text-muted-foreground">
         O app encontrou um erro ao carregar. Tente de novo ou entre novamente.
       </p>

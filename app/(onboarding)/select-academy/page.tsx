@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { listMyAcademies, selectAcademy } from "@/actions/academies";
+import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 import { getActiveAcademyId } from "@/lib/academy/context";
 import { profileCanCreateAcademy } from "@/lib/academy/create-access";
 import { SelectAcademyList } from "./select-academy-list";
@@ -39,9 +40,9 @@ export default async function SelectAcademyPage() {
         <p className="text-2xl font-bold tracking-tight text-foreground">
           BJJ Pulse
         </p>
-        <h1 className="text-lg font-medium text-muted-foreground">
+        <BlackBeltTitle className="text-lg font-medium text-muted-foreground">
           Selecione a academia
-        </h1>
+        </BlackBeltTitle>
         <p className="text-sm text-muted-foreground">{description}</p>
       </header>
 

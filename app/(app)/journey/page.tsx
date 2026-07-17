@@ -34,7 +34,7 @@ export default async function JourneyPage({
       : "Seu progresso, faixas e troféus no tatame";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5 pb-2 sm:space-y-4">
       <PageHeader
         eyebrow="Progresso"
         title="Minha Jornada"

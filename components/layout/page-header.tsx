@@ -1,3 +1,4 @@
+import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 import { HeaderNotificationsBell } from "@/components/layout/header-notifications-bell";
 import { HeaderUserAvatar } from "@/components/layout/header-user-avatar";
 import { cn } from "@/lib/utils";
@@ -33,9 +34,9 @@ export async function PageHeader({
             {eyebrow}
           </p>
         ) : null}
-        <h1 className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
+        <BlackBeltTitle className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
           {title}
-        </h1>
+        </BlackBeltTitle>
         {description ? (
           <p className="text-sm text-[var(--bjj-muted)]">{description}</p>
         ) : null}

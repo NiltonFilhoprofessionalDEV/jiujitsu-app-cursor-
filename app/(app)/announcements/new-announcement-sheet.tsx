@@ -11,11 +11,16 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { NewAnnouncementForm } from "./new-announcement-form";
+import {
+  NewAnnouncementForm,
+  type AnnouncementClassOption,
+} from "./new-announcement-form";
 
 export function NewAnnouncementSheet({
+  classes,
   defaultOpen = false,
 }: {
+  classes: AnnouncementClassOption[];
   defaultOpen?: boolean;
 }) {
   const router = useRouter();
@@ -64,13 +69,14 @@ export function NewAnnouncementSheet({
           <SheetHeader className="border-b border-border px-4 pb-3 pt-4">
             <SheetTitle>Novo aviso</SheetTitle>
             <SheetDescription>
-              Publique um comunicado para a academia.
+              Publique um comunicado para a academia ou para uma turma.
             </SheetDescription>
           </SheetHeader>
           <div className="px-4 py-4">
             {open ? (
               <NewAnnouncementForm
                 key="new-announcement"
+                classes={classes}
                 onSuccess={() => handleOpenChange(false)}
               />
             ) : null}

@@ -129,8 +129,8 @@ export function TrophyCelebrationOverlay({
         }}
       />
 
-      <div className="trophy-celebrate-glow pointer-events-none absolute left-1/2 top-[40%] h-[min(95vw,640px)] w-[min(95vw,640px)] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
-      <div className="trophy-celebrate-flare pointer-events-none absolute left-1/2 top-[40%] h-[min(70vw,420px)] w-[min(70vw,420px)] -translate-x-1/2 -translate-y-1/2 rounded-full" />
+      <div className="trophy-celebrate-glow pointer-events-none absolute left-1/2 top-[40%] h-[min(110vw,760px)] w-[min(110vw,760px)] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
+      <div className="trophy-celebrate-flare pointer-events-none absolute left-1/2 top-[40%] h-[min(85vw,520px)] w-[min(85vw,520px)] -translate-x-1/2 -translate-y-1/2 rounded-full" />
 
       <button
         type="button"
@@ -141,13 +141,13 @@ export function TrophyCelebrationOverlay({
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
         <p
-          className="trophy-celebrate-copy shrink-0 text-[11px] font-medium uppercase tracking-[0.32em]"
+          className="trophy-celebrate-copy shrink-0 text-center text-xl font-semibold uppercase tracking-[0.18em] sm:text-2xl"
           style={{ color: "var(--trophy-celebrate-eyebrow)" }}
         >
           Conquista desbloqueada
         </p>
 
-        <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+        <div className="flex min-h-0 w-full flex-1 items-center justify-center py-2">
           <div className="trophy-celebrate-reveal">
             <div className="trophy-celebrate-float">
               <TrophyImage

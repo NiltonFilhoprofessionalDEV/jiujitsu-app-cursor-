@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getHomeOpsBoard } from "@/actions/dashboard";
+import { HomeDesktopGate } from "@/components/home/home-desktop-gate";
 import { HomeOpsBodyClient } from "@/components/home/home-ops-client";
 import { PageHeader } from "@/components/layout/page-header";
 import { getActiveAcademyBrief } from "@/lib/academy/active";
@@ -114,14 +115,29 @@ export default async function HomePage() {
     );
   }
 
+  const canGraduate = can(membership.role, "graduate");
+  const canAnnounce = can(membership.role, "manage_announcements");
+  const canAddVideo = can(membership.role, "manage_virtual_lessons");
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 lg:space-y-6">
       <PageHeader
         eyebrow="BJJ Pulse"
         title={academyName}
         description="Comando do tatame"
       />
-      <HomeOpsBodyClient initialData={board} />
+
+      {/* Mobile: painel slim (ops) */}
+      <div className="space-y-5 lg:hidden">
+        <HomeOpsBodyClient initialData={board} />
+      </div>
+
+      {/* Desktop: dashboard completo — só monta em lg+ */}
+      <HomeDesktopGate
+        canGraduate={canGraduate}
+        canAnnounce={canAnnounce}
+        canAddVideo={canAddVideo}
+      />
     </div>
   );
 }

@@ -9,7 +9,15 @@ import { Label } from "@/components/ui/label";
 
 const initialState: AuthActionState = null;
 
-export function SignupForm({ next }: { next?: string }) {
+export function SignupForm({
+  next,
+  lockedEmail,
+  defaultName,
+}: {
+  next?: string;
+  lockedEmail?: string | null;
+  defaultName?: string | null;
+}) {
   const [state, formAction, pending] = useActionState(signup, initialState);
 
   return (
@@ -26,6 +34,7 @@ export function SignupForm({ next }: { next?: string }) {
               autoComplete="name"
               required
               minLength={2}
+              defaultValue={defaultName ?? ""}
               placeholder="Seu nome"
               className="h-11"
             />
@@ -38,9 +47,20 @@ export function SignupForm({ next }: { next?: string }) {
               type="email"
               autoComplete="email"
               required
+              defaultValue={lockedEmail ?? ""}
+              readOnly={Boolean(lockedEmail)}
               placeholder="voce@email.com"
-              className="h-11"
+              className={
+                lockedEmail
+                  ? "h-11 bg-muted text-muted-foreground"
+                  : "h-11"
+              }
             />
+            {lockedEmail ? (
+              <p className="text-[11px] text-muted-foreground">
+                Este convite está vinculado a este e-mail.
+              </p>
+            ) : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>

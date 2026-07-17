@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
-  createMemberByEmail,
+  createManualMember,
   type MemberActionState,
 } from "@/actions/members";
 import type { MemberRole } from "@/types/domain";
@@ -25,33 +26,151 @@ export function NewMemberForm({
   assignableRoles: MemberRole[];
 }) {
   const [state, formAction, pending] = useActionState(
-    createMemberByEmail,
+    createManualMember,
     initialState,
   );
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (state?.error) toast.error(state.error);
+    if (state?.error && !state.memberId) toast.error(state.error);
     if (state?.success) toast.success(state.success);
   }, [state]);
+
+  if (state?.memberId && state.inviteUrl) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-3 text-sm text-foreground">
+          {state.success ?? "Aluno criado com sucesso."}
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Link de acesso
+          </p>
+          <p className="break-all rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
+            {state.inviteUrl}
+          </p>
+        </div>
+
+        <div className="grid gap-2">
+          {state.whatsappUrl ? (
+            <a
+              href={state.whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-12 items-center justify-center rounded-xl bg-[#25D366] text-base font-semibold text-white"
+            >
+              Enviar no WhatsApp
+            </a>
+          ) : null}
+
+          {state.mailtoUrl ? (
+            <a
+              href={state.mailtoUrl}
+              className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-card text-base font-medium"
+            >
+              {state.emailSent
+                ? "E-mail enviado · abrir de novo"
+                : "Abrir e-mail com convite"}
+            </a>
+          ) : null}
+
+          <Button
+            type="button"
+            variant="outline"
+            className="h-12"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(state.inviteUrl!);
+                setCopied(true);
+                toast.success("Link copiado");
+              } catch {
+                toast.error("Não foi possível copiar");
+              }
+            }}
+          >
+            {copied ? "Link copiado" : "Copiar link"}
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          <Link
+            href={`/members/${state.memberId}`}
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-card text-sm font-medium"
+          >
+            Ver aluno
+          </Link>
+          <Link
+            href="/members/new"
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-primary text-sm font-medium text-primary-foreground"
+          >
+            Adicionar outro
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="space-y-4">
       <p className="rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
-        A pessoa precisa ter feito signup antes. Informe o mesmo e-mail da
-        conta para vinculá-la à academia.
+        O aluno entra na lista na hora. Depois você manda o convite pelo
+        WhatsApp (ou e-mail) para ele criar a conta e acessar o app.
       </p>
 
       <div className="space-y-2">
-        <Label htmlFor="email">E-mail da conta *</Label>
+        <Label htmlFor="name">Nome completo *</Label>
+        <Input
+          id="name"
+          name="name"
+          required
+          placeholder="Nome do aluno"
+          className="h-11"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="phone">WhatsApp *</Label>
+        <Input
+          id="phone"
+          name="phone"
+          type="tel"
+          required
+          inputMode="tel"
+          placeholder="11999998888"
+          className="h-11"
+        />
+        <p className="text-[11px] text-muted-foreground">
+          Com DDD. O botão abre o WhatsApp desse número com a mensagem pronta.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="email">E-mail (opcional)</Label>
         <Input
           id="email"
           name="email"
           type="email"
-          required
           placeholder="aluno@email.com"
           className="h-11"
         />
       </div>
+
+      <label className="flex items-start gap-2 rounded-xl border border-border bg-background/60 px-3 py-2.5 text-sm">
+        <input
+          type="checkbox"
+          name="send_email"
+          value="on"
+          className="mt-1"
+        />
+        <span>
+          Tentar enviar o convite por e-mail automaticamente
+          <span className="mt-0.5 block text-[11px] text-muted-foreground">
+            Se o envio automático não estiver configurado, você ainda pode abrir
+            o e-mail com a mensagem pronta.
+          </span>
+        </span>
+      </label>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
@@ -92,7 +211,7 @@ export function NewMemberForm({
           <select
             id="current_belt"
             name="current_belt"
-            defaultValue=""
+            defaultValue="Branca"
             className={selectClassName}
           >
             <option value="">Sem faixa</option>
@@ -146,7 +265,7 @@ export function NewMemberForm({
         />
       </div>
 
-      {state?.error ? (
+      {state?.error && !state.memberId ? (
         <p
           role="alert"
           className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
@@ -158,9 +277,9 @@ export function NewMemberForm({
       <Button
         type="submit"
         disabled={pending}
-        className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90"
+        className="h-12 w-full bg-primary text-base font-semibold text-primary-foreground hover:bg-primary/90"
       >
-        {pending ? "Adicionando…" : "Adicionar membro"}
+        {pending ? "Criando…" : "Criar aluno e gerar convite"}
       </Button>
     </form>
   );

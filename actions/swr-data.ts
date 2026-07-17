@@ -9,7 +9,9 @@ import {
 } from "@/actions/attendance";
 import { listClasses, type ClassRow } from "@/actions/classes";
 import {
+  getDashboardData,
   getHomeOpsBoard,
+  type DashboardData,
   type HomeOpsBoard,
 } from "@/actions/dashboard";
 import { listMembers, type AcademyMemberRow } from "@/actions/members";
@@ -25,6 +27,10 @@ export type ClassesBoardData = {
 
 export async function fetchHomeOps(): Promise<HomeOpsBoard> {
   return getHomeOpsBoard();
+}
+
+export async function fetchHomeDashboard(): Promise<DashboardData> {
+  return getDashboardData();
 }
 
 export async function fetchClassesBoard(): Promise<ClassesBoardData> {

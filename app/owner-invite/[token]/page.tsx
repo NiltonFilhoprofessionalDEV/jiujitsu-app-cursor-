@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getOwnerInvitePreview } from "@/actions/owner-invites";
+import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 import { createClient } from "@/lib/supabase/server";
 import { AcceptOwnerInviteButton } from "./accept-button";
 
@@ -18,9 +19,9 @@ export default async function OwnerInvitePage({ params }: { params: Params }) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center px-4">
         <div className="rounded-2xl border border-border bg-card p-6 text-center backdrop-blur-xl">
-          <h1 className="text-xl font-semibold text-[var(--bjj-text)]">
+          <BlackBeltTitle className="font-display text-xl tracking-[0.06em] text-[var(--bjj-text)]">
             Convite inválido
-          </h1>
+          </BlackBeltTitle>
           <p className="mt-2 text-sm text-[var(--bjj-muted)]">
             Este link não existe ou foi removido.
           </p>
@@ -42,9 +43,9 @@ export default async function OwnerInvitePage({ params }: { params: Params }) {
       <div className="space-y-6 rounded-2xl border border-border bg-card p-6 backdrop-blur-xl">
         <header className="space-y-2 text-center">
           <p className="text-sm font-medium text-primary">BJJ Pulse</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
+          <BlackBeltTitle className="font-display text-2xl tracking-[0.06em] text-[var(--bjj-text)]">
             Criar sua academia
-          </h1>
+          </BlackBeltTitle>
           <p className="text-sm text-[var(--bjj-muted)]">
             Este convite libera você como <strong>dono</strong> para cadastrar
             uma academia nova.

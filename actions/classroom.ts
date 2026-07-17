@@ -35,6 +35,8 @@ export type VirtualLessonRow = {
   created_at: string;
   created_by_name: string;
   is_favorite: boolean;
+  is_liked: boolean;
+  like_count: number;
 };
 
 export type VirtualLessonComment = {
@@ -43,6 +45,8 @@ export type VirtualLessonComment = {
   created_at: string;
   author_name: string;
   is_own: boolean;
+  parent_id: string | null;
+  replies: VirtualLessonComment[];
 };
 
 type ListVirtualLessonsOptions = {
@@ -71,6 +75,8 @@ function formValue(formData: FormData, key: string): string {
 function mapLesson(
   row: Record<string, unknown>,
   favoriteIds: Set<string>,
+  likedIds: Set<string> = new Set(),
+  likeCounts: Map<string, number> = new Map(),
 ): VirtualLessonRow {
   const profileEntry = row.profiles as
     | { name: string }
@@ -101,6 +107,8 @@ function mapLesson(
     created_at: row.created_at as string,
     created_by_name: author?.name ?? "Equipe",
     is_favorite: favoriteIds.has(id),
+    is_liked: likedIds.has(id),
+    like_count: likeCounts.get(id) ?? 0,
   };
 }
 
@@ -116,6 +124,31 @@ async function loadFavoriteIds(
     .eq("member_id", memberId)
     .in("lesson_id", lessonIds);
   return new Set((data ?? []).map((row) => row.lesson_id as string));
+}
+
+async function loadLikeState(
+  memberId: string,
+  lessonIds: string[],
+): Promise<{ likedIds: Set<string>; likeCounts: Map<string, number> }> {
+  const likedIds = new Set<string>();
+  const likeCounts = new Map<string, number>();
+  if (lessonIds.length === 0) return { likedIds, likeCounts };
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("virtual_lesson_likes")
+    .select("lesson_id, member_id")
+    .in("lesson_id", lessonIds);
+
+  for (const row of data ?? []) {
+    const lessonId = row.lesson_id as string;
+    likeCounts.set(lessonId, (likeCounts.get(lessonId) ?? 0) + 1);
+    if ((row.member_id as string) === memberId) {
+      likedIds.add(lessonId);
+    }
+  }
+
+  return { likedIds, likeCounts };
 }
 
 export async function listVirtualLessons(
@@ -176,6 +209,7 @@ export async function listVirtualLessons(
 
   const ids = rows.map((row) => row.id as string);
   let favoriteIds = await loadFavoriteIds(member.id, ids);
+  const { likedIds, likeCounts } = await loadLikeState(member.id, ids);
 
   if (options?.favoritesOnly) {
     if (favoriteIds.size === 0) return [];
@@ -184,7 +218,12 @@ export async function listVirtualLessons(
   }
 
   return rows.map((row) =>
-    mapLesson(row as Record<string, unknown>, favoriteIds),
+    mapLesson(
+      row as Record<string, unknown>,
+      favoriteIds,
+      likedIds,
+      likeCounts,
+    ),
   );
 }
 
@@ -229,7 +268,13 @@ export async function getVirtualLesson(
   }
 
   const favoriteIds = await loadFavoriteIds(member.id, [lessonId]);
-  return mapLesson(data as Record<string, unknown>, favoriteIds);
+  const { likedIds, likeCounts } = await loadLikeState(member.id, [lessonId]);
+  return mapLesson(
+    data as Record<string, unknown>,
+    favoriteIds,
+    likedIds,
+    likeCounts,
+  );
 }
 
 export async function createVirtualLesson(
@@ -322,12 +367,135 @@ export async function deleteVirtualLesson(
 
     revalidatePath("/classroom");
     revalidatePath(`/classroom/${lessonId}`);
-    return { success: "Aula virtual removida." };
+    return { success: "Vídeo excluído." };
   } catch (err) {
     if (err instanceof PermissionError) {
       return { error: "Sem permissão para gerenciar aulas virtuais." };
     }
     throw err;
+  }
+}
+
+export async function updateVirtualLesson(
+  _prevState: ClassroomActionState,
+  formData: FormData,
+): Promise<ClassroomActionState> {
+  try {
+    const actor = await assertCapability("manage_virtual_lessons");
+    const lessonId = formValue(formData, "id");
+    if (!lessonId) {
+      return { error: "Aula inválida." };
+    }
+
+    const parsed = createVirtualLessonSchema.safeParse({
+      title: formValue(formData, "title"),
+      description: formValue(formData, "description"),
+      youtube_url: formValue(formData, "youtube_url"),
+      orientation: formValue(formData, "orientation"),
+      visibility: formValue(formData, "visibility"),
+      class_id: formValue(formData, "class_id"),
+      category: formValue(formData, "category"),
+    });
+
+    if (!parsed.success) {
+      return { error: firstValidationError(parsed.error) };
+    }
+
+    const supabase = await createClient();
+
+    if (parsed.data.class_id) {
+      const { data: klass, error: classError } = await supabase
+        .from("classes")
+        .select("id")
+        .eq("id", parsed.data.class_id)
+        .eq("academy_id", actor.academy_id)
+        .maybeSingle();
+
+      if (classError) return { error: classError.message };
+      if (!klass) return { error: "Turma não encontrada." };
+    }
+
+    const { error } = await supabase
+      .from("virtual_lessons")
+      .update({
+        title: parsed.data.title,
+        description: parsed.data.description,
+        youtube_url: parsed.data.youtube_url,
+        youtube_video_id: parsed.data.youtube_video_id,
+        orientation: parsed.data.orientation,
+        visibility: parsed.data.visibility,
+        class_id: parsed.data.class_id,
+        category: parsed.data.category,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", lessonId)
+      .eq("academy_id", actor.academy_id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath("/classroom");
+    revalidatePath(`/classroom/${lessonId}`);
+    redirect(`/classroom/${lessonId}`);
+  } catch (err) {
+    if (err instanceof PermissionError) {
+      return { error: "Sem permissão para gerenciar aulas virtuais." };
+    }
+    throw err;
+  }
+}
+
+export async function toggleLessonLike(
+  lessonId: string,
+): Promise<{ liked: boolean; like_count: number; error?: string }> {
+  try {
+    const member = await getActiveMembership();
+    if (!can(member.role, "view_virtual_lessons")) {
+      return { liked: false, like_count: 0, error: "Sem permissão." };
+    }
+
+    const supabase = await createClient();
+    const { data: existing } = await supabase
+      .from("virtual_lesson_likes")
+      .select("id")
+      .eq("lesson_id", lessonId)
+      .eq("member_id", member.id)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from("virtual_lesson_likes")
+        .delete()
+        .eq("id", existing.id);
+      if (error) {
+        return { liked: true, like_count: 0, error: error.message };
+      }
+    } else {
+      const { error } = await supabase.from("virtual_lesson_likes").insert({
+        lesson_id: lessonId,
+        member_id: member.id,
+      });
+      if (error) {
+        return { liked: false, like_count: 0, error: error.message };
+      }
+    }
+
+    const { count } = await supabase
+      .from("virtual_lesson_likes")
+      .select("id", { count: "exact", head: true })
+      .eq("lesson_id", lessonId);
+
+    revalidatePath("/classroom");
+    revalidatePath(`/classroom/${lessonId}`);
+    return {
+      liked: !existing,
+      like_count: count ?? 0,
+    };
+  } catch {
+    return {
+      liked: false,
+      like_count: 0,
+      error: "Não foi possível atualizar a curtida.",
+    };
   }
 }
 
@@ -384,7 +552,7 @@ export async function listLessonComments(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("virtual_lesson_comments")
-    .select("id, body, created_at, member_id")
+    .select("id, body, created_at, member_id, parent_id")
     .eq("lesson_id", lessonId)
     .order("created_at", { ascending: true });
 
@@ -410,13 +578,33 @@ export async function listLessonComments(
     }
   }
 
-  return rows.map((row) => ({
+  const mapped = rows.map((row) => ({
     id: row.id as string,
     body: row.body as string,
     created_at: row.created_at as string,
     author_name: nameByMemberId.get(row.member_id as string) ?? "Membro",
     is_own: (row.member_id as string) === member.id,
+    parent_id: (row.parent_id as string | null) ?? null,
+    replies: [] as VirtualLessonComment[],
   }));
+
+  const roots: VirtualLessonComment[] = [];
+  const byId = new Map(mapped.map((c) => [c.id, c]));
+
+  for (const comment of mapped) {
+    if (comment.parent_id) {
+      const parent = byId.get(comment.parent_id);
+      if (parent && !parent.parent_id) {
+        parent.replies.push(comment);
+      } else {
+        roots.push(comment);
+      }
+    } else {
+      roots.push(comment);
+    }
+  }
+
+  return roots;
 }
 
 export async function addLessonComment(
@@ -432,22 +620,45 @@ export async function addLessonComment(
     const parsed = createLessonCommentSchema.safeParse({
       lesson_id: formValue(formData, "lesson_id"),
       body: formValue(formData, "body"),
+      parent_id: formValue(formData, "parent_id"),
     });
     if (!parsed.success) {
       return { error: firstValidationError(parsed.error) };
     }
 
     const supabase = await createClient();
+
+    if (parsed.data.parent_id) {
+      const { data: parent, error: parentError } = await supabase
+        .from("virtual_lesson_comments")
+        .select("id, lesson_id, parent_id")
+        .eq("id", parsed.data.parent_id)
+        .maybeSingle();
+
+      if (parentError) return { error: parentError.message };
+      if (!parent || parent.lesson_id !== parsed.data.lesson_id) {
+        return { error: "Comentário pai inválido." };
+      }
+      if (parent.parent_id) {
+        return { error: "Responda ao comentário principal." };
+      }
+    }
+
     const { error } = await supabase.from("virtual_lesson_comments").insert({
       lesson_id: parsed.data.lesson_id,
       member_id: member.id,
       body: parsed.data.body,
+      parent_id: parsed.data.parent_id ?? null,
     });
 
     if (error) return { error: error.message };
 
     revalidatePath(`/classroom/${parsed.data.lesson_id}`);
-    return { success: "Comentário publicado." };
+    return {
+      success: parsed.data.parent_id
+        ? "Resposta publicada."
+        : "Comentário publicado.",
+    };
   } catch {
     return { error: "Não foi possível comentar." };
   }

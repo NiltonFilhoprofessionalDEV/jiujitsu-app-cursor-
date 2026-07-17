@@ -55,7 +55,7 @@ export default async function CheckinPage() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Fila"
+        title="Check-in"
         description="Aprovar presença no tatame"
       />
       <StaffCheckinClient

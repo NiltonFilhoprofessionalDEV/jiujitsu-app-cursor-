@@ -2,11 +2,20 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { sendInviteEmail } from "@/lib/email/send-invite";
+import {
+  buildAcademyInviteMessage,
+  buildInviteMailto,
+} from "@/lib/invites/message";
 import { setActiveAcademyId } from "@/lib/academy/context";
 import { defaultAppHomePath } from "@/lib/journey/nav";
 import { assertCapability } from "@/lib/permissions/assert";
+import {
+  toWhatsAppE164,
+  whatsappChatUrl,
+  whatsappShareUrl,
+} from "@/lib/phone/whatsapp";
 import { createClient } from "@/lib/supabase/server";
-import { createInviteSchema } from "@/lib/validations/invites";
 import type { MemberRole } from "@/types/domain";
 
 export type InviteActionState = {
@@ -14,6 +23,8 @@ export type InviteActionState = {
   success?: string;
   inviteUrl?: string;
   whatsappUrl?: string;
+  mailtoUrl?: string;
+  emailSent?: boolean;
   token?: string;
 } | null;
 
@@ -23,7 +34,7 @@ function randomToken(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-async function appOrigin(): Promise<string> {
+export async function appOrigin(): Promise<string> {
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");
   const proto = h.get("x-forwarded-proto") ?? "http";
@@ -36,6 +47,8 @@ export type InvitePreview = {
   role: MemberRole;
   expiresAt: string;
   isValid: boolean;
+  inviteeName: string | null;
+  expectedEmail: string | null;
 };
 
 export async function getInvitePreview(
@@ -56,53 +69,58 @@ export async function getInvitePreview(
     role: row.role as MemberRole,
     expiresAt: row.expires_at as string,
     isValid: Boolean(row.is_valid),
+    inviteeName: (row.invitee_name as string | null) ?? null,
+    expectedEmail: (row.expected_email as string | null) ?? null,
   };
 }
 
-export async function createInvite(
-  _prev: InviteActionState,
-  formData: FormData,
-): Promise<InviteActionState> {
-  let actor;
-  try {
-    actor = await assertCapability("manage_members");
-  } catch {
-    return { error: "Sem permissão para criar convites." };
-  }
+export type PersonalInviteLinks = {
+  token: string;
+  inviteUrl: string;
+  whatsappUrl: string;
+  mailtoUrl: string | null;
+  emailSent: boolean;
+};
 
-  const parsed = createInviteSchema.safeParse({
-    role: formData.get("role") || "student",
-    expiresInDays: formData.get("expiresInDays") || 7,
-    maxUses: formData.get("maxUses") || 100,
-  });
-
-  if (!parsed.success) {
-    return { error: "Dados do convite inválidos." };
+/** Creates a 1-use invite linked to an existing academy member. */
+export async function createPersonalInviteForMember(input: {
+  memberId: string;
+  academyId: string;
+  createdByProfileId: string;
+  role: MemberRole;
+  academyName: string;
+  inviteeName: string;
+  phone?: string | null;
+  email?: string | null;
+  sendEmail?: boolean;
+  expiresInDays?: number;
+}): Promise<{ error?: string; links?: PersonalInviteLinks }> {
+  if (input.role === "owner" || input.role === "administrator") {
+    return { error: "Convite pessoal não permite este papel." };
   }
 
   const token = randomToken();
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + parsed.data.expiresInDays);
+  expiresAt.setDate(expiresAt.getDate() + (input.expiresInDays ?? 14));
 
   const supabase = await createClient();
 
-  const { data: academy, error: academyError } = await supabase
-    .from("academies")
-    .select("name")
-    .eq("id", actor.academy_id)
-    .maybeSingle();
-
-  if (academyError || !academy?.name) {
-    return { error: "Não foi possível carregar o nome da academia." };
-  }
+  // Deactivate previous personal invites for this member
+  await supabase
+    .from("academy_invites")
+    .update({ is_active: false })
+    .eq("academy_id", input.academyId)
+    .eq("target_member_id", input.memberId)
+    .eq("is_active", true);
 
   const { error } = await supabase.from("academy_invites").insert({
-    academy_id: actor.academy_id,
+    academy_id: input.academyId,
     token,
-    role: parsed.data.role,
-    created_by: actor.profile_id,
+    role: input.role,
+    created_by: input.createdByProfileId,
     expires_at: expiresAt.toISOString(),
-    max_uses: parsed.data.maxUses,
+    max_uses: 1,
+    target_member_id: input.memberId,
   });
 
   if (error) {
@@ -111,14 +129,139 @@ export async function createInvite(
 
   const origin = await appOrigin();
   const inviteUrl = `${origin}/invite/${token}`;
-  const message = `Olá! Você foi convidado para entrar na academia "${academy.name}" no app BJJ Pulse.\n\nAcesse o link para se cadastrar:\n${inviteUrl}`;
-  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  const message = buildAcademyInviteMessage({
+    academyName: input.academyName,
+    inviteUrl,
+    inviteeName: input.inviteeName,
+  });
+
+  const directed =
+    input.phone && toWhatsAppE164(input.phone)
+      ? whatsappChatUrl(input.phone, message)
+      : null;
+  const whatsappUrl = directed ?? whatsappShareUrl(message);
+
+  let emailSent = false;
+  let mailtoUrl: string | null = null;
+
+  if (input.email) {
+    mailtoUrl = buildInviteMailto({
+      email: input.email,
+      academyName: input.academyName,
+      inviteUrl,
+      inviteeName: input.inviteeName,
+    });
+
+    if (input.sendEmail) {
+      try {
+        const result = await sendInviteEmail({
+          to: input.email,
+          academyName: input.academyName,
+          inviteUrl,
+          inviteeName: input.inviteeName,
+        });
+        emailSent = result.ok;
+      } catch {
+        emailSent = false;
+      }
+    }
+  }
 
   return {
-    success: "Convite criado! Compartilhe no WhatsApp.",
-    inviteUrl,
-    whatsappUrl,
-    token,
+    links: {
+      token,
+      inviteUrl,
+      whatsappUrl,
+      mailtoUrl,
+      emailSent,
+    },
+  };
+}
+
+export async function resendMemberInvite(
+  _prev: InviteActionState,
+  formData: FormData,
+): Promise<InviteActionState> {
+  let actor;
+  try {
+    actor = await assertCapability("manage_members");
+  } catch {
+    return { error: "Sem permissão para reenviar convite." };
+  }
+
+  const memberId = String(formData.get("member_id") ?? "");
+  const sendEmail = formData.get("send_email") === "on";
+
+  if (!memberId) {
+    return { error: "Membro inválido." };
+  }
+
+  const supabase = await createClient();
+  const { data: member, error } = await supabase
+    .from("academy_members")
+    .select(
+      "id, role, profile_id, pending_name, pending_email, pending_phone, profiles(name, email, phone)",
+    )
+    .eq("id", memberId)
+    .eq("academy_id", actor.academy_id)
+    .maybeSingle();
+
+  if (error || !member) {
+    return { error: "Membro não encontrado." };
+  }
+
+  if (member.profile_id) {
+    return { error: "Este membro já tem acesso ao app." };
+  }
+
+  const { data: academy } = await supabase
+    .from("academies")
+    .select("name")
+    .eq("id", actor.academy_id)
+    .maybeSingle();
+
+  if (!academy?.name) {
+    return { error: "Academia não encontrada." };
+  }
+
+  const profileRel = member.profiles as
+    | { name: string; email: string; phone: string | null }
+    | { name: string; email: string; phone: string | null }[]
+    | null;
+  const profile = Array.isArray(profileRel) ? profileRel[0] : profileRel;
+
+  const inviteeName =
+    (member.pending_name as string | null) ?? profile?.name ?? "Aluno";
+  const phone =
+    (member.pending_phone as string | null) ?? profile?.phone ?? null;
+  const email =
+    (member.pending_email as string | null) ?? profile?.email ?? null;
+
+  const created = await createPersonalInviteForMember({
+    memberId: member.id as string,
+    academyId: actor.academy_id,
+    createdByProfileId: actor.profile_id,
+    role: member.role as MemberRole,
+    academyName: academy.name,
+    inviteeName,
+    phone,
+    email,
+    sendEmail,
+  });
+
+  if (created.error || !created.links) {
+    return { error: created.error ?? "Falha ao criar convite." };
+  }
+
+  return {
+    success: created.links.emailSent
+      ? "Convite recriado e e-mail enviado."
+      : "Convite recriado. Compartilhe no WhatsApp ou e-mail.",
+    inviteUrl: created.links.inviteUrl,
+    whatsappUrl: created.links.whatsappUrl,
+    mailtoUrl: created.links.mailtoUrl ?? undefined,
+    emailSent: created.links.emailSent,
+    token: created.links.token,
   };
 }
 
@@ -128,7 +271,7 @@ export async function listInvites() {
   const { data, error } = await supabase
     .from("academy_invites")
     .select(
-      "id, token, role, expires_at, max_uses, used_count, is_active, created_at",
+      "id, token, role, expires_at, max_uses, used_count, is_active, created_at, target_member_id",
     )
     .eq("academy_id", actor.academy_id)
     .order("created_at", { ascending: false })
@@ -176,6 +319,15 @@ export async function acceptInvite(token: string) {
     }
     if (msg.includes("invite_not_found")) {
       return { error: "Convite inválido." };
+    }
+    if (msg.includes("invite_already_claimed")) {
+      return { error: "Este convite já foi usado por outra pessoa." };
+    }
+    if (msg.includes("invite_email_mismatch")) {
+      return {
+        error:
+          "Este convite é só para o e-mail cadastrado pelo professor. Entre com esse e-mail ou peça um novo convite.",
+      };
     }
     return { error: "Não foi possível aceitar o convite. Tente novamente." };
   }

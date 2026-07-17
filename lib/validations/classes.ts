@@ -69,6 +69,10 @@ export const updateClassSchema = createClassSchema.extend({
   is_active: booleanFromForm,
 });
 
+export const deleteClassSchema = z.object({
+  id: z.string().uuid("Turma inválida"),
+});
+
 export const createScheduleSchema = z
   .object({
     class_id: z.string().uuid("Turma inválida"),

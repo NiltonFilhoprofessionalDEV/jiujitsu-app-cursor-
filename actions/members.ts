@@ -11,32 +11,42 @@ import { can } from "@/lib/permissions/capabilities";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
+  createManualMemberSchema,
   createMemberByEmailSchema,
+  deleteMemberSchema,
   listMembersFilterSchema,
   updateMemberSchema,
   type ListMembersFilter,
 } from "@/lib/validations/members";
+import { createPersonalInviteForMember } from "@/actions/invites";
+import { toWhatsAppE164 } from "@/lib/phone/whatsapp";
 import type { MemberRole, MemberStatus } from "@/types/domain";
 
 export type MemberActionState = {
   error?: string;
   success?: string;
+  memberId?: string;
+  inviteUrl?: string;
+  whatsappUrl?: string;
+  mailtoUrl?: string;
+  emailSent?: boolean;
 } | null;
 
 export type AcademyMemberRow = {
   id: string;
   academy_id: string;
-  profile_id: string;
+  profile_id: string | null;
   role: MemberRole;
   status: MemberStatus;
   current_belt: string | null;
   current_degree: number;
   joined_at: string;
+  has_app_access: boolean;
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
   medical_notes: string | null;
   profile: {
-    id: string;
+    id: string | null;
     name: string;
     email: string;
     avatar_url: string | null;
@@ -109,12 +119,15 @@ function assertCanAssignRole(
 function mapMemberRow(row: {
   id: string;
   academy_id: string;
-  profile_id: string;
+  profile_id: string | null;
   role: string;
   status: string;
   current_belt: string | null;
   current_degree: number;
   joined_at: string;
+  pending_name?: string | null;
+  pending_email?: string | null;
+  pending_phone?: string | null;
   member_private_details?:
     | {
         emergency_contact_name: string | null;
@@ -145,7 +158,11 @@ function mapMemberRow(row: {
     | null;
 }): AcademyMemberRow | null {
   const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
-  if (!profile) return null;
+  const pendingName = row.pending_name?.trim() || null;
+  const pendingEmail = row.pending_email?.trim() || null;
+  const pendingPhone = row.pending_phone?.trim() || null;
+
+  if (!profile && !pendingName) return null;
 
   const privateRel = row.member_private_details;
   const privateDetails = Array.isArray(privateRel)
@@ -161,15 +178,16 @@ function mapMemberRow(row: {
     current_belt: row.current_belt,
     current_degree: row.current_degree,
     joined_at: row.joined_at,
+    has_app_access: Boolean(row.profile_id),
     emergency_contact_name: privateDetails?.emergency_contact_name ?? null,
     emergency_contact_phone: privateDetails?.emergency_contact_phone ?? null,
     medical_notes: privateDetails?.medical_notes ?? null,
     profile: {
-      id: profile.id,
-      name: profile.name,
-      email: profile.email,
-      avatar_url: profile.avatar_url,
-      phone: profile.phone,
+      id: profile?.id ?? null,
+      name: profile?.name ?? pendingName ?? "Sem nome",
+      email: profile?.email ?? pendingEmail ?? "",
+      avatar_url: profile?.avatar_url ?? null,
+      phone: profile?.phone ?? pendingPhone ?? null,
     },
   };
 }
@@ -183,6 +201,9 @@ const MEMBER_SELECT = `
   current_belt,
   current_degree,
   joined_at,
+  pending_name,
+  pending_email,
+  pending_phone,
   member_private_details(
     emergency_contact_name,
     emergency_contact_phone,
@@ -326,6 +347,206 @@ export async function getMember(
   }
   if (!data) return null;
   return mapMemberRow(data as Parameters<typeof mapMemberRow>[0]);
+}
+
+export async function createManualMember(
+  _prevState: MemberActionState,
+  formData: FormData,
+): Promise<MemberActionState> {
+  let actor;
+  try {
+    actor = await assertCapability("manage_members");
+  } catch (err) {
+    if (err instanceof PermissionError) {
+      return { error: "Sem permissão para gerenciar membros." };
+    }
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "Não foi possível criar o membro.",
+    };
+  }
+
+  const parsed = createManualMemberSchema.safeParse({
+    name: formData.get("name"),
+    phone: formData.get("phone"),
+    email: formOptional(formData, "email"),
+    role: formData.get("role") || "student",
+    status: formData.get("status") || "active",
+    current_belt: formOptional(formData, "current_belt"),
+    current_degree: formOptional(formData, "current_degree") || "0",
+    emergency_contact_name: formOptional(formData, "emergency_contact_name"),
+    emergency_contact_phone: formOptional(formData, "emergency_contact_phone"),
+    medical_notes: formOptional(formData, "medical_notes"),
+    send_email: formOptional(formData, "send_email"),
+  });
+
+  if (!parsed.success) {
+    return { error: firstValidationError(parsed.error) };
+  }
+
+  const roleError = assertCanAssignRole(actor.role, parsed.data.role);
+  if (roleError) {
+    return { error: roleError };
+  }
+
+  if (!toWhatsAppE164(parsed.data.phone)) {
+    return {
+      error:
+        "WhatsApp inválido. Use DDD + número (ex.: 11999998888).",
+    };
+  }
+
+  const supabase = await createClient();
+
+  const { data: academy, error: academyError } = await supabase
+    .from("academies")
+    .select("name")
+    .eq("id", actor.academy_id)
+    .maybeSingle();
+
+  if (academyError || !academy?.name) {
+    return { error: "Não foi possível carregar a academia." };
+  }
+
+  // If email matches an existing profile, link directly (no pending)
+  if (parsed.data.email) {
+    try {
+      const admin = createAdminClient();
+      const { data: existingProfile } = await admin
+        .from("profiles")
+        .select("id, email, name")
+        .ilike("email", parsed.data.email)
+        .maybeSingle();
+
+      if (existingProfile) {
+        const { data: already } = await supabase
+          .from("academy_members")
+          .select("id")
+          .eq("academy_id", actor.academy_id)
+          .eq("profile_id", existingProfile.id)
+          .maybeSingle();
+
+        if (already) {
+          return { error: "Esta pessoa já é membro desta academia." };
+        }
+
+        const { data: inserted, error: insertError } = await supabase
+          .from("academy_members")
+          .insert({
+            academy_id: actor.academy_id,
+            profile_id: existingProfile.id,
+            role: parsed.data.role,
+            status: parsed.data.status,
+            current_belt: parsed.data.current_belt ?? null,
+            current_degree: parsed.data.current_degree ?? 0,
+          })
+          .select("id")
+          .single();
+
+        if (insertError || !inserted) {
+          return {
+            error: insertError?.message ?? "Falha ao vincular membro.",
+          };
+        }
+
+        await upsertPrivateDetails(supabase, inserted.id, {
+          emergency_contact_name: parsed.data.emergency_contact_name ?? null,
+          emergency_contact_phone: parsed.data.emergency_contact_phone ?? null,
+          medical_notes: parsed.data.medical_notes ?? null,
+        });
+
+        if (!existingProfile.name && parsed.data.name) {
+          await admin
+            .from("profiles")
+            .update({ phone: parsed.data.phone })
+            .eq("id", existingProfile.id);
+        } else {
+          await admin
+            .from("profiles")
+            .update({ phone: parsed.data.phone })
+            .eq("id", existingProfile.id);
+        }
+
+        revalidatePath("/members");
+        return {
+          success: "Membro vinculado (conta já existia). Acesso liberado.",
+          memberId: inserted.id,
+        };
+      }
+    } catch {
+      // Fall through to pending create if admin lookup fails
+    }
+  }
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("academy_members")
+    .insert({
+      academy_id: actor.academy_id,
+      profile_id: null,
+      role: parsed.data.role,
+      status: parsed.data.status,
+      current_belt: parsed.data.current_belt ?? null,
+      current_degree: parsed.data.current_degree ?? 0,
+      pending_name: parsed.data.name,
+      pending_email: parsed.data.email ?? null,
+      pending_phone: parsed.data.phone,
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !inserted) {
+    return {
+      error: insertError?.message ?? "Não foi possível criar o aluno.",
+    };
+  }
+
+  const privateError = await upsertPrivateDetails(supabase, inserted.id, {
+    emergency_contact_name: parsed.data.emergency_contact_name ?? null,
+    emergency_contact_phone: parsed.data.emergency_contact_phone ?? null,
+    medical_notes: parsed.data.medical_notes ?? null,
+  });
+
+  if (privateError) {
+    return { error: privateError };
+  }
+
+  const invite = await createPersonalInviteForMember({
+    memberId: inserted.id,
+    academyId: actor.academy_id,
+    createdByProfileId: actor.profile_id,
+    role: parsed.data.role,
+    academyName: academy.name,
+    inviteeName: parsed.data.name,
+    phone: parsed.data.phone,
+    email: parsed.data.email,
+    sendEmail: Boolean(parsed.data.send_email && parsed.data.email),
+  });
+
+  if (invite.error || !invite.links) {
+    revalidatePath("/members");
+    revalidatePath(`/members/${inserted.id}`);
+    return {
+      success:
+        "Aluno criado. Abra o perfil para gerar o convite de acesso.",
+      memberId: inserted.id,
+    };
+  }
+
+  revalidatePath("/members");
+  revalidatePath(`/members/${inserted.id}`);
+
+  return {
+    success: invite.links.emailSent
+      ? "Aluno criado e e-mail de convite enviado."
+      : "Aluno criado! Envie o convite pelo WhatsApp.",
+    memberId: inserted.id,
+    inviteUrl: invite.links.inviteUrl,
+    whatsappUrl: invite.links.whatsappUrl,
+    mailtoUrl: invite.links.mailtoUrl ?? undefined,
+    emailSent: invite.links.emailSent,
+  };
 }
 
 export async function createMemberByEmail(
@@ -533,6 +754,118 @@ export async function updateMember(
         err instanceof Error
           ? err.message
           : "Não foi possível atualizar o membro.",
+    };
+  }
+}
+
+export async function deleteMember(
+  _prevState: MemberActionState,
+  formData: FormData,
+): Promise<MemberActionState> {
+  try {
+    const actor = await assertCapability("manage_members");
+
+    const parsed = deleteMemberSchema.safeParse({
+      id: formData.get("id"),
+    });
+
+    if (!parsed.success) {
+      return { error: firstValidationError(parsed.error) };
+    }
+
+    if (parsed.data.id === actor.id) {
+      return { error: "Você não pode apagar a si mesmo." };
+    }
+
+    const supabase = await createClient();
+    const { data: target, error: fetchError } = await supabase
+      .from("academy_members")
+      .select("id, role, profile_id, pending_name")
+      .eq("id", parsed.data.id)
+      .eq("academy_id", actor.academy_id)
+      .maybeSingle();
+
+    if (fetchError) {
+      return { error: fetchError.message };
+    }
+    if (!target) {
+      return { error: "Membro não encontrado." };
+    }
+
+    if (target.role === "owner" && actor.role !== "owner") {
+      return { error: "Apenas o proprietário pode apagar um Owner." };
+    }
+
+    if (
+      actor.role === "instructor" &&
+      (target.role === "owner" || target.role === "administrator")
+    ) {
+      return { error: "Instrutor não pode apagar Owner ou Administrador." };
+    }
+
+    if (target.role === "owner") {
+      const { count } = await supabase
+        .from("academy_members")
+        .select("id", { count: "exact", head: true })
+        .eq("academy_id", actor.academy_id)
+        .eq("role", "owner")
+        .eq("status", "active");
+
+      if ((count ?? 0) <= 1) {
+        return {
+          error: "Não é possível apagar o único proprietário da academia.",
+        };
+      }
+    }
+
+    // Deactivate personal invites first
+    await supabase
+      .from("academy_invites")
+      .update({ is_active: false })
+      .eq("academy_id", actor.academy_id)
+      .eq("target_member_id", target.id);
+
+    // Prefer hard delete when possible (pending / no history).
+    // If FKs block (attendance etc.), soft-delete to inactive.
+    const { error: deleteError } = await supabase
+      .from("academy_members")
+      .delete()
+      .eq("id", target.id)
+      .eq("academy_id", actor.academy_id);
+
+    if (deleteError) {
+      const { error: softError } = await supabase
+        .from("academy_members")
+        .update({
+          status: "inactive",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", target.id)
+        .eq("academy_id", actor.academy_id);
+
+      if (softError) {
+        return { error: softError.message };
+      }
+
+      revalidatePath("/members");
+      revalidatePath(`/members/${target.id}`);
+      return {
+        success:
+          "Membro removido da lista ativa (histórico de presenças mantido).",
+      };
+    }
+
+    revalidatePath("/members");
+    return { success: "Membro apagado." };
+  } catch (err) {
+    if (err instanceof PermissionError) {
+      return { error: "Sem permissão para gerenciar membros." };
+    }
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "Não foi possível apagar o membro.",
     };
   }
 }

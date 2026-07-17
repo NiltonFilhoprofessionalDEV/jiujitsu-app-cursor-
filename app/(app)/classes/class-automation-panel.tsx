@@ -10,6 +10,7 @@ import {
   type ScheduleDayOverrideRow,
 } from "@/actions/classes";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   findNextAutoOpen,
@@ -18,18 +19,6 @@ import {
 import { WEEKDAY_LABELS, formatTime, selectClassName } from "./labels";
 
 const initialState: ClassActionState = null;
-
-const OPEN_PRESETS = [
-  { value: 15, label: "15 min antes" },
-  { value: 30, label: "30 min antes" },
-  { value: 45, label: "45 min antes" },
-] as const;
-
-const CLOSE_PRESETS = [
-  { value: 0, label: "Na hora do fim" },
-  { value: 15, label: "15 min depois" },
-  { value: 30, label: "30 min depois" },
-] as const;
 
 function inferLead(schedules: ClassScheduleRow[]): number {
   const enabled = schedules.filter((s) => s.auto_open_enabled);
@@ -41,6 +30,12 @@ function inferGrace(schedules: ClassScheduleRow[]): number {
   const enabled = schedules.filter((s) => s.auto_open_enabled);
   if (enabled.length === 0) return 15;
   return enabled[0]?.auto_close_grace_minutes ?? 15;
+}
+
+function parseMinutes(value: string, min: number, max: number, fallback: number) {
+  const n = Number.parseInt(value, 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
 }
 
 export function ClassAutomationPanel({
@@ -62,9 +57,12 @@ export function ClassAutomationPanel({
 }) {
   const anyEnabled = schedules.some((s) => s.auto_open_enabled);
   const [enabled, setEnabled] = useState(anyEnabled);
-  const [lead, setLead] = useState(inferLead(schedules));
-  const [grace, setGrace] = useState(inferGrace(schedules));
+  const [lead, setLead] = useState(String(inferLead(schedules)));
+  const [grace, setGrace] = useState(String(inferGrace(schedules)));
   const [instructorId, setInstructorId] = useState(defaultInstructorId ?? "");
+
+  const leadMinutes = parseMinutes(lead, 5, 120, 30);
+  const graceMinutes = parseMinutes(grace, 0, 60, 15);
 
   const [state, formAction, pending] = useActionState(
     saveClassAutomation,
@@ -73,8 +71,8 @@ export function ClassAutomationPanel({
 
   useEffect(() => {
     setEnabled(schedules.some((s) => s.auto_open_enabled));
-    setLead(inferLead(schedules));
-    setGrace(inferGrace(schedules));
+    setLead(String(inferLead(schedules)));
+    setGrace(String(inferGrace(schedules)));
   }, [schedules]);
 
   useEffect(() => {
@@ -136,8 +134,8 @@ export function ClassAutomationPanel({
           Automação
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          A aula abre e fecha sozinha nos dias da grade — sem configurar horário
-          por horário.
+          Defina com quantos minutos de antecedência a aula abre e fecha sozinha
+          — você fica livre de fazer isso na mão.
         </p>
       </div>
 
@@ -199,8 +197,12 @@ export function ClassAutomationPanel({
           name="auto_open_enabled"
           value={enabled ? "true" : "false"}
         />
-        <input type="hidden" name="auto_open_lead_minutes" value={lead} />
-        <input type="hidden" name="auto_close_grace_minutes" value={grace} />
+        <input type="hidden" name="auto_open_lead_minutes" value={leadMinutes} />
+        <input
+          type="hidden"
+          name="auto_close_grace_minutes"
+          value={graceMinutes}
+        />
 
         <div className="space-y-2">
           <Label htmlFor="default_instructor_id">Professor responsável</Label>
@@ -224,7 +226,7 @@ export function ClassAutomationPanel({
         <label className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background/40 px-3 py-3">
           <div>
             <p className="text-sm font-medium text-foreground">
-              Abrir aula sozinha
+              Abrir e fechar sozinho
             </p>
             <p className="text-[11px] text-muted-foreground">
               Vale para todos os horários desta turma
@@ -253,47 +255,61 @@ export function ClassAutomationPanel({
         </label>
 
         {enabled ? (
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <Label>Abrir com quanto de antecedência?</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {OPEN_PRESETS.map((preset) => (
-                  <button
-                    key={preset.value}
-                    type="button"
-                    disabled={!canConfigure || pending}
-                    onClick={() => setLead(preset.value)}
-                    className={
-                      lead === preset.value
-                        ? "rounded-xl border border-[var(--class-sched-chip-active-border)] bg-[var(--class-sched-chip-active)] px-2 py-2.5 text-[11px] font-semibold text-foreground"
-                        : "rounded-xl border border-border bg-[var(--class-sched-chip)] px-2 py-2.5 text-[11px] text-muted-foreground"
-                    }
-                  >
-                    {preset.label}
-                  </button>
-                ))}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="min-w-0 space-y-2">
+              <Label htmlFor="auto_open_lead_input">
+                Abrir quantos minutos antes?
+              </Label>
+              <div className="relative">
+                <Input
+                  id="auto_open_lead_input"
+                  type="number"
+                  inputMode="numeric"
+                  min={5}
+                  max={120}
+                  step={1}
+                  required
+                  value={lead}
+                  onChange={(e) => setLead(e.target.value)}
+                  onBlur={() => setLead(String(leadMinutes))}
+                  disabled={!canConfigure || pending}
+                  className="h-11 pr-16 tabular-nums"
+                />
+                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground">
+                  min
+                </span>
               </div>
+              <p className="text-[11px] text-muted-foreground">
+                Ex.: 30 = abre meia hora antes do início (5–120)
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label>Fechar após o fim?</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {CLOSE_PRESETS.map((preset) => (
-                  <button
-                    key={preset.value}
-                    type="button"
-                    disabled={!canConfigure || pending}
-                    onClick={() => setGrace(preset.value)}
-                    className={
-                      grace === preset.value
-                        ? "rounded-xl border border-[var(--class-sched-chip-active-border)] bg-[var(--class-sched-chip-active)] px-2 py-2.5 text-[11px] font-semibold text-foreground"
-                        : "rounded-xl border border-border bg-[var(--class-sched-chip)] px-2 py-2.5 text-[11px] text-muted-foreground"
-                    }
-                  >
-                    {preset.label}
-                  </button>
-                ))}
+            <div className="min-w-0 space-y-2">
+              <Label htmlFor="auto_close_grace_input">
+                Fechar quantos minutos depois do fim?
+              </Label>
+              <div className="relative">
+                <Input
+                  id="auto_close_grace_input"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={60}
+                  step={1}
+                  required
+                  value={grace}
+                  onChange={(e) => setGrace(e.target.value)}
+                  onBlur={() => setGrace(String(graceMinutes))}
+                  disabled={!canConfigure || pending}
+                  className="h-11 pr-16 tabular-nums"
+                />
+                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground">
+                  min
+                </span>
               </div>
+              <p className="text-[11px] text-muted-foreground">
+                Ex.: 15 = fecha 15 min após o fim (0–60). 0 = na hora.
+              </p>
             </div>
           </div>
         ) : null}

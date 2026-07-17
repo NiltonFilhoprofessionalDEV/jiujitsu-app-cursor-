@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { listUnits } from "@/actions/academies";
+import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
 import { NewClassForm } from "../new-class-form";
@@ -36,9 +37,9 @@ export default async function NewClassPage() {
         >
           ← Turmas
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
+        <BlackBeltTitle className="font-display text-2xl tracking-[0.06em] text-[var(--bjj-text)]">
           Nova turma
-        </h1>
+        </BlackBeltTitle>
         <p className="text-sm text-[var(--bjj-muted)]">
           Defina nome, faixa etária e unidade
         </p>

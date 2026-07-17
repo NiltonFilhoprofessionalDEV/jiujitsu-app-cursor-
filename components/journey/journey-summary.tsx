@@ -32,7 +32,7 @@ export function JourneySummary({
   return (
     <section
       className={cn(
-        "space-y-3 rounded-2xl border p-4 shadow-[var(--surface-shadow)]",
+        "space-y-4 rounded-2xl border p-5 shadow-[var(--surface-shadow)] sm:space-y-3 sm:p-4",
         darkInk ? "text-neutral-900" : "text-white",
       )}
       style={{
@@ -45,30 +45,30 @@ export function JourneySummary({
           : undefined,
       }}
     >
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
           <p
             className={cn(
-              "text-[10px] font-medium uppercase tracking-[0.18em]",
+              "text-xs font-medium uppercase tracking-[0.16em] sm:text-[10px] sm:tracking-[0.18em]",
               darkInk ? "text-neutral-800/70" : "text-white/75",
             )}
           >
             {countLabel}
           </p>
-          <p className="font-display mt-0.5 text-3xl tabular-nums leading-none">
+          <p className="font-display mt-1 text-4xl tabular-nums leading-none sm:mt-0.5 sm:text-3xl">
             {classCount}
           </p>
         </div>
-        <div className="text-right">
+        <div className="min-w-0 text-right">
           <p
             className={cn(
-              "text-[10px] font-medium uppercase tracking-[0.18em]",
+              "text-xs font-medium uppercase tracking-[0.16em] sm:text-[10px] sm:tracking-[0.18em]",
               darkInk ? "text-neutral-800/70" : "text-white/75",
             )}
           >
             Faixa atual
           </p>
-          <p className="mt-0.5 text-base font-semibold">
+          <p className="mt-1 text-lg font-semibold leading-tight sm:mt-0.5 sm:text-base">
             {currentBelt ?? "—"}
             {currentDegree ? ` · grau ${currentDegree}` : ""}
           </p>
@@ -77,7 +77,7 @@ export function JourneySummary({
 
       <div
         className={cn(
-          "space-y-1.5 border-t pt-3",
+          "space-y-2 border-t pt-4 sm:space-y-1.5 sm:pt-3",
           darkInk ? "border-black/15" : "border-white/20",
         )}
       >
@@ -85,20 +85,20 @@ export function JourneySummary({
           <>
             <div
               className={cn(
-                "flex items-center justify-between gap-2 text-xs",
+                "flex items-start justify-between gap-3 text-sm leading-snug sm:items-center sm:text-xs",
                 darkInk ? "text-neutral-800/75" : "text-white/80",
               )}
             >
-              <span className="truncate">
+              <span className="min-w-0">
                 Próximo: {trophyTitle(next)} · {next.label}
               </span>
-              <span className="shrink-0">
+              <span className="shrink-0 tabular-nums">
                 {remaining} {remaining === 1 ? "aula" : "aulas"}
               </span>
             </div>
             <div
               className={cn(
-                "h-1.5 w-full overflow-hidden rounded-full",
+                "h-2.5 w-full overflow-hidden rounded-full sm:h-1.5",
                 darkInk ? "bg-black/15" : "bg-white/25",
               )}
             >
@@ -114,7 +114,7 @@ export function JourneySummary({
         ) : (
           <p
             className={cn(
-              "text-xs",
+              "text-sm sm:text-xs",
               darkInk ? "text-neutral-800/75" : "text-white/80",
             )}
           >

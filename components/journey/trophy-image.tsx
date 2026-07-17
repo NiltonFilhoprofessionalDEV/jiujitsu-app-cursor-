@@ -5,11 +5,12 @@ import { cn } from "@/lib/utils";
 
 const SIZES = {
   sm: { px: 56, className: "h-14 w-14", img: "h-12 w-12" },
+  md: { px: 72, className: "h-[4.5rem] w-[4.5rem]", img: "h-16 w-16" },
   lg: { px: 160, className: "h-40 w-40", img: "h-36 w-36" },
   hero: {
-    px: 900,
+    px: 1200,
     className:
-      "h-[min(78vh,92vw)] w-[min(78vh,92vw)] max-h-[640px] max-w-[640px]",
+      "h-[min(88vh,98vw)] w-[min(88vh,98vw)] max-h-[min(88vh,820px)] max-w-[min(98vw,820px)]",
     img: "h-full w-full",
   },
 } as const;

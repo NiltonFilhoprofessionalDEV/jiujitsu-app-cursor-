@@ -65,12 +65,12 @@ export function TrophySection({
       <button
         type="button"
         onClick={previewAll}
-        className="w-full rounded-xl border border-dashed border-[var(--checkin-queue-border)] bg-[var(--checkin-queue-wash)] px-4 py-3 text-sm font-medium text-foreground transition hover:brightness-[1.03]"
+        className="w-full rounded-xl border border-dashed border-[var(--checkin-queue-border)] bg-[var(--checkin-queue-wash)] px-4 py-3.5 text-base font-medium text-foreground transition hover:brightness-[1.03] sm:py-3 sm:text-sm"
       >
         Pré-visualizar celebração dos troféus
       </button>
 
-      <p className="text-center text-[11px] text-muted-foreground">
+      <p className="text-center text-xs leading-relaxed text-muted-foreground sm:text-[11px]">
         Toque em um troféu para ver só ele · ou use o botão para a sequência
       </p>
 

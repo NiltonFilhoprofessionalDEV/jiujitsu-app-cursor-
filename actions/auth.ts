@@ -133,10 +133,10 @@ export async function signup(
     };
   }
 
-  const inviteOk = await isInviteNextValid(nextPath);
-  if (!inviteOk) {
+  const inviteGate = await getInviteSignupGate(nextPath);
+  if (!inviteGate.ok) {
     return {
-      error: "Este convite é inválido, expirou ou já foi usado.",
+      error: inviteGate.error,
     };
   }
 
@@ -148,6 +148,15 @@ export async function signup(
 
   if (!parsed.success) {
     return { error: firstValidationError(parsed.error) };
+  }
+
+  if (
+    inviteGate.expectedEmail &&
+    parsed.data.email.toLowerCase() !== inviteGate.expectedEmail
+  ) {
+    return {
+      error: `Este convite exige o e-mail ${inviteGate.expectedEmail}.`,
+    };
   }
 
   const supabase = await createClient();
@@ -170,32 +179,57 @@ export async function signup(
   redirect(`/login?next=${encodeURIComponent(nextPath)}`);
 }
 
-async function isInviteNextValid(nextPath: string): Promise<boolean> {
+async function getInviteSignupGate(
+  nextPath: string,
+): Promise<
+  | { ok: true; expectedEmail: string | null }
+  | { ok: false; error: string }
+> {
   const supabase = await createClient();
 
   if (nextPath.startsWith("/invite/")) {
     const token = nextPath.slice("/invite/".length).split("/")[0]?.trim();
-    if (!token) return false;
+    if (!token) {
+      return { ok: false, error: "Convite inválido." };
+    }
     const { data, error } = await supabase.rpc("get_invite_preview", {
       p_token: token,
     });
-    if (error || !data) return false;
+    if (error || !data) {
+      return { ok: false, error: "Este convite é inválido, expirou ou já foi usado." };
+    }
     const row = Array.isArray(data) ? data[0] : data;
-    return Boolean(row?.is_valid);
+    if (!row?.is_valid) {
+      return { ok: false, error: "Este convite é inválido, expirou ou já foi usado." };
+    }
+    return {
+      ok: true,
+      expectedEmail: (row.expected_email as string | null) ?? null,
+    };
   }
 
   if (nextPath.startsWith("/owner-invite/")) {
     const token = nextPath.slice("/owner-invite/".length).split("/")[0]?.trim();
-    if (!token) return false;
+    if (!token) {
+      return { ok: false, error: "Convite inválido." };
+    }
     const { data, error } = await supabase.rpc("get_owner_invite_preview", {
       p_token: token,
     });
-    if (error || !data) return false;
+    if (error || !data) {
+      return { ok: false, error: "Este convite é inválido, expirou ou já foi usado." };
+    }
     const row = Array.isArray(data) ? data[0] : data;
-    return Boolean(row?.is_valid);
+    if (!row?.is_valid) {
+      return { ok: false, error: "Este convite é inválido, expirou ou já foi usado." };
+    }
+    return { ok: true, expectedEmail: null };
   }
 
-  return false;
+  return {
+    ok: false,
+    error: "Cadastro só é permitido com um link de convite válido da academia.",
+  };
 }
 
 export async function logout() {

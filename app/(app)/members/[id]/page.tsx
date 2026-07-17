@@ -2,12 +2,15 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Award, MessageCircle, Phone, Users } from "lucide-react";
 import { getMember } from "@/actions/members";
+import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 import { beltNeedsDarkInk, beltSwatch } from "@/lib/belts/colors";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
 import { cn } from "@/lib/utils";
 import type { MemberRole } from "@/types/domain";
 import { EditMemberForm } from "../edit-member-form";
+import { MemberAccessInvitePanel } from "../member-access-invite-panel";
+import { MemberDeleteButton } from "../member-delete-button";
 import { ROLE_LABELS, STATUS_LABELS } from "../labels";
 
 function assignableRoles(actorRole: MemberRole): MemberRole[] {
@@ -99,9 +102,9 @@ export default async function MemberDetailPage({
         <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--surface-shadow)] backdrop-blur-xl">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 space-y-1">
-              <h1 className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
+              <BlackBeltTitle className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
                 {member.profile.name}
-              </h1>
+              </BlackBeltTitle>
               <p className="truncate text-sm text-muted-foreground">
                 {member.profile.email}
               </p>
@@ -109,6 +112,11 @@ export default async function MemberDetailPage({
                 <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                   {ROLE_LABELS[member.role]}
                 </span>
+                {!member.has_app_access ? (
+                  <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-400">
+                    Sem acesso ao app
+                  </span>
+                ) : null}
                 <span
                   className={
                     member.status === "active"
@@ -164,6 +172,13 @@ export default async function MemberDetailPage({
         </div>
       </header>
 
+      {canManage && !member.has_app_access ? (
+        <MemberAccessInvitePanel
+          memberId={member.id}
+          hasEmail={Boolean(member.profile.email)}
+        />
+      ) : null}
+
       {(canGraduate || canManageClasses) && member.role === "student" ? (
         <section className="grid grid-cols-2 gap-2">
           {canGraduate ? (
@@ -205,6 +220,13 @@ export default async function MemberDetailPage({
           canEdit={canManage}
         />
       </div>
+
+      {canManage ? (
+        <MemberDeleteButton
+          memberId={member.id}
+          memberName={member.profile.name}
+        />
+      ) : null}
     </div>
   );
 }

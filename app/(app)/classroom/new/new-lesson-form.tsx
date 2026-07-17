@@ -4,7 +4,9 @@ import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
 import {
   createVirtualLesson,
+  updateVirtualLesson,
   type ClassroomActionState,
+  type VirtualLessonRow,
 } from "@/actions/classroom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +20,16 @@ export type ClassOption = {
   name: string;
 };
 
-export function NewLessonForm({ classes }: { classes: ClassOption[] }) {
+export function NewLessonForm({
+  classes,
+  lesson,
+}: {
+  classes: ClassOption[];
+  lesson?: VirtualLessonRow;
+}) {
+  const isEdit = Boolean(lesson);
   const [state, formAction, pending] = useActionState(
-    createVirtualLesson,
+    isEdit ? updateVirtualLesson : createVirtualLesson,
     initialState,
   );
 
@@ -31,9 +40,17 @@ export function NewLessonForm({ classes }: { classes: ClassOption[] }) {
 
   return (
     <form action={formAction} className="space-y-4">
+      {lesson ? <input type="hidden" name="id" value={lesson.id} /> : null}
+
       <div className="space-y-2">
         <Label htmlFor="title">Título *</Label>
-        <Input id="title" name="title" required className="h-11" />
+        <Input
+          id="title"
+          name="title"
+          required
+          defaultValue={lesson?.title}
+          className="h-11"
+        />
       </div>
 
       <div className="space-y-2">
@@ -42,6 +59,7 @@ export function NewLessonForm({ classes }: { classes: ClassOption[] }) {
           id="description"
           name="description"
           rows={3}
+          defaultValue={lesson?.description ?? ""}
           className="flex w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm text-foreground shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
         />
       </div>
@@ -53,6 +71,7 @@ export function NewLessonForm({ classes }: { classes: ClassOption[] }) {
           name="youtube_url"
           type="url"
           required
+          defaultValue={lesson?.youtube_url}
           placeholder="https://www.youtube.com/watch?v=…"
           className="h-11"
         />
@@ -64,7 +83,7 @@ export function NewLessonForm({ classes }: { classes: ClassOption[] }) {
           id="category"
           name="category"
           required
-          defaultValue="guarda"
+          defaultValue={lesson?.category ?? "guarda"}
           className={selectClassName}
         >
           <option value="guarda">Guarda</option>
@@ -79,7 +98,7 @@ export function NewLessonForm({ classes }: { classes: ClassOption[] }) {
         <select
           id="orientation"
           name="orientation"
-          defaultValue="horizontal"
+          defaultValue={lesson?.orientation ?? "horizontal"}
           className={selectClassName}
         >
           <option value="horizontal">Horizontal</option>
@@ -92,7 +111,7 @@ export function NewLessonForm({ classes }: { classes: ClassOption[] }) {
         <select
           id="class_id"
           name="class_id"
-          defaultValue=""
+          defaultValue={lesson?.class_id ?? ""}
           className={selectClassName}
         >
           <option value="">Nenhuma (geral)</option>
@@ -109,7 +128,7 @@ export function NewLessonForm({ classes }: { classes: ClassOption[] }) {
         <select
           id="visibility"
           name="visibility"
-          defaultValue="academy"
+          defaultValue={lesson?.visibility ?? "academy"}
           className={selectClassName}
         >
           <option value="academy">Toda academia</option>
@@ -118,7 +137,13 @@ export function NewLessonForm({ classes }: { classes: ClassOption[] }) {
       </div>
 
       <Button type="submit" className="h-11 w-full" disabled={pending}>
-        {pending ? "Publicando…" : "Publicar aula"}
+        {pending
+          ? isEdit
+            ? "Salvando…"
+            : "Publicando…"
+          : isEdit
+            ? "Salvar alterações"
+            : "Publicar aula"}
       </Button>
     </form>
   );
