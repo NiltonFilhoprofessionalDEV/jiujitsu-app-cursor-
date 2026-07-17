@@ -57,7 +57,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         badges={badges}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <main className="mx-auto w-full flex-1 px-4 pb-44 pt-4 lg:max-w-5xl lg:px-8 lg:pb-10 lg:pt-8">
+        <main className="mx-auto w-full flex-1 px-4 pb-40 pt-[max(1rem,calc(0.5rem+env(safe-area-inset-top)))] lg:max-w-5xl lg:px-8 lg:pb-10 lg:pt-8">
           {children}
         </main>
         <BottomNav items={navItems} menuHasUnread={badges.total > 0} />

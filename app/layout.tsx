@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   applicationName: "BJJ Pulse",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "black",
     title: "BJJ Pulse",
   },
   icons: {

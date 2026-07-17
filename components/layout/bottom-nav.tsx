@@ -18,11 +18,11 @@ export function BottomNav({
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-lg overflow-visible border-t border-border pb-[max(1.35rem,calc(0.85rem+env(safe-area-inset-bottom)))] lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-lg overflow-visible border-t border-border pb-[max(0.75rem,calc(0.35rem+env(safe-area-inset-bottom)))] lg:hidden"
       style={{ background: "var(--nav-bg)" }}
       aria-label="Navegação principal"
     >
-      <ul className={cn("grid items-end px-2 pt-2.5 pb-1.5", gridColsClass)}>
+      <ul className={cn("grid items-end px-2 pt-2 pb-1", gridColsClass)}>
         {items.map(({ href, label, icon, fab }) => {
           const Icon = NAV_ICONS[icon];
           const active = pathname.startsWith(href);
@@ -75,7 +75,7 @@ export function BottomNav({
               <Link
                 href={href}
                 className={cn(
-                  "relative flex min-h-12 flex-col items-center justify-center gap-1 pb-1 text-[10px] tracking-wide",
+                  "relative flex min-h-11 flex-col items-center justify-center gap-1 pb-0.5 text-[10px] tracking-wide",
                   active
                     ? "text-[var(--action-red)]"
                     : "text-muted-foreground",
