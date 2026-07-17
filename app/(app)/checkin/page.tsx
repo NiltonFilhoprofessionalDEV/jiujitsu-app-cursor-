@@ -30,10 +30,10 @@ export default async function CheckinPage() {
     }
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-5">
         <PageHeader
           title="Check-in"
-          description="Suas turmas com aula aberta agora"
+          description="Toque para registrar presença"
         />
         <StudentCheckinClient initialBoard={board} />
       </div>
@@ -53,10 +53,10 @@ export default async function CheckinPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
-        title="Fila de presença"
-        description="Aulas abertas · aprovar e acompanhar o tatame"
+        title="Fila"
+        description="Aprovar presença no tatame"
       />
       <StaffCheckinClient
         initialBoard={board}

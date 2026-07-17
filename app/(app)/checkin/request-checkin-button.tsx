@@ -43,7 +43,7 @@ export function CheckinStatusBadge({
   return (
     <span
       className={cn(
-        "rounded-md px-2 py-0.5 text-[10px] font-medium",
+        "rounded-md px-2.5 py-1 text-xs font-medium",
         ui.className,
       )}
     >
@@ -77,10 +77,10 @@ export function RequestCheckinButton({
   if (effectiveStatus === "pending") {
     return (
       <div className="space-y-2">
-        <div className="flex h-10 w-full items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-sm font-medium text-amber-400">
+        <div className="flex h-12 w-full items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-base font-semibold text-amber-400">
           Aguardando aprovação
         </div>
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-center text-sm text-muted-foreground">
           O professor vai confirmar sua presença.
         </p>
       </div>
@@ -89,7 +89,7 @@ export function RequestCheckinButton({
 
   if (effectiveStatus === "approved") {
     return (
-      <div className="flex h-10 w-full items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-sm font-medium text-emerald-400">
+      <div className="flex h-12 w-full items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-base font-semibold text-emerald-400">
         Presença confirmada
       </div>
     );
@@ -104,12 +104,12 @@ export function RequestCheckinButton({
       <Button
         type="submit"
         disabled={pending}
-        className="h-10 w-full bg-[var(--action-red)] text-primary-foreground hover:bg-[var(--action-red)]/90"
+        className="h-12 w-full bg-[var(--action-red)] text-base font-semibold text-primary-foreground hover:bg-[var(--action-red)]/90"
       >
         {pending ? "Enviando…" : label}
       </Button>
       {state?.error ? (
-        <p role="alert" className="mt-2 text-xs text-destructive">
+        <p role="alert" className="mt-2 text-sm text-destructive">
           {state.error}
         </p>
       ) : null}

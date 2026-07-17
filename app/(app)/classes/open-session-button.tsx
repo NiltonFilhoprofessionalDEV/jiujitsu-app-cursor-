@@ -33,7 +33,7 @@ export function OpenSessionButton({ classId }: { classId: string }) {
       <Button
         type="submit"
         disabled={pending || navigating}
-        className="h-11 w-full bg-[var(--action-red)] text-primary-foreground hover:bg-[var(--action-red)]/90"
+        className="h-12 w-full bg-[var(--action-red)] text-base font-semibold text-primary-foreground hover:bg-[var(--action-red)]/90"
       >
         {pending || navigating ? "Abrindo…" : "Abrir aula"}
       </Button>
