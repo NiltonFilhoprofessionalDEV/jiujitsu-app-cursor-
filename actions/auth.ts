@@ -23,7 +23,23 @@ function firstValidationError(error: {
   return fieldMessage ?? flat.formErrors[0] ?? "Dados inválidos";
 }
 
-async function redirectAfterAuth(userId: string): Promise<AuthActionState> {
+async function safeNextPath(formData: FormData): Promise<string | null> {
+  const next = formData.get("next");
+  if (typeof next !== "string" || !next.startsWith("/")) return null;
+  // Only allow internal relative paths (invite flow)
+  if (next.startsWith("//") || next.includes("://")) return null;
+  if (next.startsWith("/invite/")) return next;
+  return null;
+}
+
+async function redirectAfterAuth(
+  userId: string,
+  nextPath?: string | null,
+): Promise<AuthActionState> {
+  if (nextPath) {
+    redirect(nextPath);
+  }
+
   const supabase = await createClient();
   const { data: members, error } = await supabase
     .from("academy_members")
@@ -81,7 +97,8 @@ export async function login(
     return { error: "Não foi possível autenticar. Tente novamente." };
   }
 
-  return await redirectAfterAuth(data.user.id);
+  const nextPath = await safeNextPath(formData);
+  return await redirectAfterAuth(data.user.id, nextPath);
 }
 
 export async function signup(
@@ -111,8 +128,14 @@ export async function signup(
     return { error: error.message };
   }
 
+  const nextPath = await safeNextPath(formData);
+
   if (data.session && data.user) {
-    return await redirectAfterAuth(data.user.id);
+    return await redirectAfterAuth(data.user.id, nextPath);
+  }
+
+  if (nextPath) {
+    redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   }
 
   redirect("/login");

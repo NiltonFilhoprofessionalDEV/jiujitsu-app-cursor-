@@ -11,6 +11,7 @@ import {
   STATUS_OPTIONS,
   selectClassName,
 } from "./labels";
+import { CreateInviteForm } from "./create-invite-form";
 
 type SearchParams = Promise<{
   role?: string;
@@ -63,14 +64,18 @@ export default async function MembersPage({
           </p>
         </div>
         {canManage ? (
-          <Link
-            href="/members/new"
-            className="inline-flex h-10 shrink-0 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            Vincular
-          </Link>
+          <div className="flex shrink-0 gap-2">
+            <Link
+              href="/members/new"
+              className="inline-flex h-10 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Vincular
+            </Link>
+          </div>
         ) : null}
       </header>
+
+      {canManage ? <CreateInviteForm /> : null}
 
       <form
         className="grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-xl"
