@@ -699,10 +699,16 @@ export async function getStudentCheckinBoard(): Promise<StudentCheckinBoard> {
     myStatus: statusBySession.get(session.id) ?? "available",
   }));
 
-  const { data: historyRows, error: historyError } = await supabase
-    .from("attendance_records")
-    .select(
-      `
+  const approvalCutoff = new Date(
+    Date.now() - RECENT_APPROVAL_WINDOW_MS,
+  ).toISOString();
+
+  const [{ data: historyRows, error: historyError }, { data: recentApprovalRows }] =
+    await Promise.all([
+      supabase
+        .from("attendance_records")
+        .select(
+          `
       id,
       checked_at,
       class_sessions!inner(
@@ -710,10 +716,27 @@ export async function getStudentCheckinBoard(): Promise<StudentCheckinBoard> {
         classes!inner(name, academy_id)
       )
     `,
-    )
-    .eq("student_id", member.id)
-    .order("checked_at", { ascending: false })
-    .limit(5);
+        )
+        .eq("student_id", member.id)
+        .order("checked_at", { ascending: false })
+        .limit(5),
+      supabase
+        .from("attendance_records")
+        .select(
+          `
+      id,
+      checked_at,
+      class_sessions!inner(
+        date,
+        classes!inner(name, academy_id)
+      )
+    `,
+        )
+        .eq("student_id", member.id)
+        .gte("checked_at", approvalCutoff)
+        .order("checked_at", { ascending: false })
+        .limit(5),
+    ]);
 
   if (historyError) throw historyError;
 
@@ -749,27 +772,6 @@ export async function getStudentCheckinBoard(): Promise<StudentCheckinBoard> {
       ];
     },
   );
-
-  const approvalCutoff = new Date(
-    Date.now() - RECENT_APPROVAL_WINDOW_MS,
-  ).toISOString();
-
-  const { data: recentApprovalRows } = await supabase
-    .from("attendance_records")
-    .select(
-      `
-      id,
-      checked_at,
-      class_sessions!inner(
-        date,
-        classes!inner(name, academy_id)
-      )
-    `,
-    )
-    .eq("student_id", member.id)
-    .gte("checked_at", approvalCutoff)
-    .order("checked_at", { ascending: false })
-    .limit(5);
 
   const recentApprovals: RecentApprovalCelebration[] = (
     recentApprovalRows ?? []

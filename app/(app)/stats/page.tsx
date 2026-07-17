@@ -8,15 +8,20 @@ import { can } from "@/lib/permissions/capabilities";
 
 export default async function StatsPage() {
   let membership;
-  let academy;
   try {
     membership = await getActiveMembership();
-    academy = await getActiveAcademyBrief();
   } catch {
     redirect("/select-academy");
   }
 
   if (!can(membership.role, "view_dashboard")) {
+    let academy;
+    try {
+      academy = await getActiveAcademyBrief();
+    } catch {
+      redirect("/select-academy");
+    }
+
     return (
       <div className="space-y-6">
         <PageHeader
@@ -37,9 +42,13 @@ export default async function StatsPage() {
     );
   }
 
+  let academy;
   let charts;
   try {
-    charts = await getStatsCharts();
+    [academy, charts] = await Promise.all([
+      getActiveAcademyBrief(),
+      getStatsCharts(),
+    ]);
   } catch {
     redirect("/select-academy");
   }

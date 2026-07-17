@@ -34,10 +34,8 @@ function formatDate(value: string): string {
 
 export default async function HomePage() {
   let membership;
-  let academy;
   try {
     membership = await getActiveMembership();
-    academy = await getActiveAcademyBrief();
   } catch {
     redirect("/select-academy");
   }
@@ -50,6 +48,13 @@ export default async function HomePage() {
   }
 
   if (!can(membership.role, "view_dashboard")) {
+    let academy;
+    try {
+      academy = await getActiveAcademyBrief();
+    } catch {
+      redirect("/select-academy");
+    }
+
     return (
       <div className="space-y-6">
         <PageHeader
@@ -82,9 +87,13 @@ export default async function HomePage() {
     );
   }
 
+  let academy;
   let data;
   try {
-    data = await getDashboardData();
+    [academy, data] = await Promise.all([
+      getActiveAcademyBrief(),
+      getDashboardData(),
+    ]);
   } catch {
     redirect("/select-academy");
   }

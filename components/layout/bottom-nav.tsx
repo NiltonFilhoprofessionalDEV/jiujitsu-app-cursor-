@@ -31,7 +31,6 @@ export function BottomNav({
               <li key={href} className="relative flex justify-center">
                 <Link
                   href={href}
-                  prefetch={false}
                   className="group -mt-8 flex flex-col items-center gap-1"
                   aria-label={label}
                 >

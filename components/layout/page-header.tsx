@@ -1,8 +1,22 @@
+import { Suspense } from "react";
 import { HeaderNotificationsBell } from "@/components/layout/header-notifications-bell";
 import { HeaderUserAvatar } from "@/components/layout/header-user-avatar";
 import { cn } from "@/lib/utils";
 
-export async function PageHeader({
+function HeaderChromeSkeleton({ round }: { round?: boolean }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex h-11 w-11 shrink-0 animate-pulse border border-border bg-muted",
+        round ? "rounded-full" : "rounded-full",
+      )}
+      aria-hidden
+    />
+  );
+}
+
+/** Sync header: title paints immediately; bell/avatar stream in Suspense. */
+export function PageHeader({
   title,
   description,
   eyebrow,
@@ -17,7 +31,6 @@ export async function PageHeader({
   action?: React.ReactNode;
   className?: string;
   showAvatar?: boolean;
-  /** Bell next to profile photo (default on). */
   showNotifications?: boolean;
 }) {
   return (
@@ -43,8 +56,16 @@ export async function PageHeader({
       {showAvatar || showNotifications || action ? (
         <div className="flex shrink-0 items-center gap-2 pt-0.5">
           {action}
-          {showNotifications ? <HeaderNotificationsBell /> : null}
-          {showAvatar ? <HeaderUserAvatar /> : null}
+          {showNotifications ? (
+            <Suspense fallback={<HeaderChromeSkeleton />}>
+              <HeaderNotificationsBell />
+            </Suspense>
+          ) : null}
+          {showAvatar ? (
+            <Suspense fallback={<HeaderChromeSkeleton round />}>
+              <HeaderUserAvatar />
+            </Suspense>
+          ) : null}
         </div>
       ) : null}
     </header>

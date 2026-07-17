@@ -14,8 +14,10 @@ export default async function ProfilePage() {
   let membership;
   let academy;
   try {
-    membership = await getActiveMembership();
-    academy = await getActiveAcademyBrief();
+    [membership, academy] = await Promise.all([
+      getActiveMembership(),
+      getActiveAcademyBrief(),
+    ]);
   } catch {
     redirect("/select-academy");
   }

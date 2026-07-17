@@ -141,7 +141,7 @@ export function StaffCheckinCockpit({
                   </div>
 
                   {canApprove || canOpen ? (
-                    <a
+                    <Link
                       href={href}
                       className={cn(
                         "inline-flex h-11 w-full items-center justify-center rounded-xl text-sm font-medium transition",
@@ -153,7 +153,7 @@ export function StaffCheckinCockpit({
                       {urgent
                         ? `Aprovar fila (${session.pendingCount})`
                         : "Abrir mesa da aula"}
-                    </a>
+                    </Link>
                   ) : (
                     <p className="text-xs text-muted-foreground">
                       Sem permissão para gerenciar esta aula.

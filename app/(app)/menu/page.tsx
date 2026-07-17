@@ -17,15 +17,18 @@ import { getActiveMembership } from "@/lib/permissions/assert";
 export default async function MenuPage() {
   let membership;
   let academy;
+  let badges;
   try {
-    membership = await getActiveMembership();
-    academy = await getActiveAcademyBrief();
+    [membership, academy, badges] = await Promise.all([
+      getActiveMembership(),
+      getActiveAcademyBrief(),
+      getUnreadBadges(),
+    ]);
   } catch {
     redirect("/select-academy");
   }
 
   const links = getVisibleMenuNavItems(membership.role);
-  const badges = await getUnreadBadges();
 
   return (
     <div className="space-y-6">

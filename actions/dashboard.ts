@@ -168,45 +168,64 @@ export async function getDashboardData(): Promise<DashboardData> {
       .gte("joined_at", monthStart),
   ]);
 
-  const memberIds = await memberIdsForAcademy(academyId);
-  const classIds = await classIdsForAcademy(academyId);
+  const [memberIds, classIds] = await Promise.all([
+    memberIdsForAcademy(academyId),
+    classIdsForAcademy(academyId),
+  ]);
   const sessionIds = await sessionIdsForClasses(classIds);
 
-  let attendanceToday = 0;
-  let attendanceMonth = 0;
-  let graduationsMonth = 0;
-  let recentAttendance: RecentAttendanceItem[] = [];
-  let recentGraduations: RecentGraduationItem[] = [];
+  const openSessionsQuery = supabase
+    .from("class_sessions")
+    .select(
+      `
+      id,
+      class_id,
+      started_at,
+      classes!inner(id, name, academy_id)
+    `,
+    )
+    .eq("status", "open")
+    .eq("classes.academy_id", academyId)
+    .order("started_at", { ascending: false });
 
-  if (sessionIds.length > 0) {
-    const [{ count: todayCount }, { count: monthCount }] = await Promise.all([
-      supabase
-        .from("attendance_records")
-        .select("id", { count: "exact", head: true })
-        .in("session_id", sessionIds)
-        .gte("checked_at", todayStart),
-      supabase
-        .from("attendance_records")
-        .select("id", { count: "exact", head: true })
-        .in("session_id", sessionIds)
-        .gte("checked_at", monthStart),
-    ]);
-    attendanceToday = todayCount ?? 0;
-    attendanceMonth = monthCount ?? 0;
+  const attendanceBlock = (async () => {
+    let attendanceToday = 0;
+    let attendanceMonth = 0;
+    let recentAttendance: RecentAttendanceItem[] = [];
 
-    const { data: recentAtt } = await supabase
-      .from("attendance_records")
-      .select(
-        `
+    if (sessionIds.length === 0) {
+      return { attendanceToday, attendanceMonth, recentAttendance };
+    }
+
+    const [{ count: todayCount }, { count: monthCount }, { data: recentAtt }] =
+      await Promise.all([
+        supabase
+          .from("attendance_records")
+          .select("id", { count: "exact", head: true })
+          .in("session_id", sessionIds)
+          .gte("checked_at", todayStart),
+        supabase
+          .from("attendance_records")
+          .select("id", { count: "exact", head: true })
+          .in("session_id", sessionIds)
+          .gte("checked_at", monthStart),
+        supabase
+          .from("attendance_records")
+          .select(
+            `
         id,
         checked_at,
         academy_members!student_id(profiles(name)),
         class_sessions!session_id(classes(name))
       `,
-      )
-      .in("session_id", sessionIds)
-      .order("checked_at", { ascending: false })
-      .limit(8);
+          )
+          .in("session_id", sessionIds)
+          .order("checked_at", { ascending: false })
+          .limit(8),
+      ]);
+
+    attendanceToday = todayCount ?? 0;
+    attendanceMonth = monthCount ?? 0;
 
     recentAttendance = (recentAtt ?? []).flatMap((row) => {
       const am = row.academy_members as
@@ -222,16 +241,10 @@ export async function getDashboardData(): Promise<DashboardData> {
 
       const sessionRel = row.class_sessions as
         | {
-            classes:
-              | { name: string }
-              | { name: string }[]
-              | null;
+            classes: { name: string } | { name: string }[] | null;
           }
         | {
-            classes:
-              | { name: string }
-              | { name: string }[]
-              | null;
+            classes: { name: string } | { name: string }[] | null;
           }[]
         | null;
       const session = Array.isArray(sessionRel) ? sessionRel[0] : sessionRel;
@@ -250,31 +263,41 @@ export async function getDashboardData(): Promise<DashboardData> {
         },
       ];
     });
-  }
 
-  if (memberIds.length > 0) {
-    const { count: gradCount } = await supabase
-      .from("graduation_history")
-      .select("id", { count: "exact", head: true })
-      .in("member_id", memberIds)
-      .gte("graduated_at", monthStart.slice(0, 10));
+    return { attendanceToday, attendanceMonth, recentAttendance };
+  })();
 
-    graduationsMonth = gradCount ?? 0;
+  const graduationsBlock = (async () => {
+    let graduationsMonth = 0;
+    let recentGraduations: RecentGraduationItem[] = [];
 
-    const { data: recentGrad } = await supabase
-      .from("graduation_history")
-      .select(
-        `
+    if (memberIds.length === 0) {
+      return { graduationsMonth, recentGraduations };
+    }
+
+    const [{ count: gradCount }, { data: recentGrad }] = await Promise.all([
+      supabase
+        .from("graduation_history")
+        .select("id", { count: "exact", head: true })
+        .in("member_id", memberIds)
+        .gte("graduated_at", monthStart.slice(0, 10)),
+      supabase
+        .from("graduation_history")
+        .select(
+          `
         id,
         graduated_at,
         belt,
         degree,
         academy_members!member_id(profiles(name))
       `,
-      )
-      .in("member_id", memberIds)
-      .order("graduated_at", { ascending: false })
-      .limit(8);
+        )
+        .in("member_id", memberIds)
+        .order("graduated_at", { ascending: false })
+        .limit(8),
+    ]);
+
+    graduationsMonth = gradCount ?? 0;
 
     recentGraduations = (recentGrad ?? []).flatMap((row) => {
       const am = row.academy_members as
@@ -298,26 +321,20 @@ export async function getDashboardData(): Promise<DashboardData> {
         },
       ];
     });
-  }
+
+    return { graduationsMonth, recentGraduations };
+  })();
+
+  const [
+    { attendanceToday, attendanceMonth, recentAttendance },
+    { graduationsMonth, recentGraduations },
+    { data: openRows },
+  ] = await Promise.all([attendanceBlock, graduationsBlock, openSessionsQuery]);
 
   // --- Ops board: open sessions, pending queue, next class ---
   let openSessions: OpenSessionBoardItem[] = [];
   let pendingApprovals = 0;
   let nextClass: NextClassBoard = null;
-
-  const { data: openRows } = await supabase
-    .from("class_sessions")
-    .select(
-      `
-      id,
-      class_id,
-      started_at,
-      classes!inner(id, name, academy_id)
-    `,
-    )
-    .eq("status", "open")
-    .eq("classes.academy_id", academyId)
-    .order("started_at", { ascending: false });
 
   const openList = (openRows ?? []).flatMap((row) => {
     const klass = row.classes as
