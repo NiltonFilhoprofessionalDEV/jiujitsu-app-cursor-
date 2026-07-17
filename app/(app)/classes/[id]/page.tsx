@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import {
+  listAcademyStudentsForRoster,
+  listClassMembers,
+} from "@/actions/class-members";
 import { getClass } from "@/actions/classes";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
 import { ClassSchedulesManager } from "../class-schedules-manager";
 import { OpenSessionButton } from "../open-session-button";
+import { ClassRoster } from "./class-roster";
 
 type Params = Promise<{ id: string }>;
 
@@ -35,6 +40,13 @@ export default async function ClassDetailPage({
 
   const canManage = can(membership.role, "manage_classes");
   const canOpen = can(membership.role, "open_session") && klass.is_active;
+
+  const rosterData = canManage
+    ? await Promise.all([
+        listClassMembers(klass.id),
+        listAcademyStudentsForRoster(),
+      ])
+    : null;
 
   return (
     <div className="space-y-6">
@@ -102,6 +114,19 @@ export default async function ClassDetailPage({
           canManage={canManage}
         />
       </section>
+
+      {rosterData ? (
+        <section className="space-y-3 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl">
+          <h2 className="text-sm font-semibold text-foreground">
+            Alunos da turma
+          </h2>
+          <ClassRoster
+            classId={klass.id}
+            initialMembers={rosterData[0]}
+            students={rosterData[1]}
+          />
+        </section>
+      ) : null}
     </div>
   );
 }
