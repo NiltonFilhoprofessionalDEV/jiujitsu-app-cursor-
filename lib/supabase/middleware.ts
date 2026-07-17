@@ -12,6 +12,7 @@ const PROTECTED_PREFIXES = [
   "/graduations",
   "/announcements",
   "/notifications",
+  "/classroom",
   "/academy",
   "/profile",
   "/create-academy",

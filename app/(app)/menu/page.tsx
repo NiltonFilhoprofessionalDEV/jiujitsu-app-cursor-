@@ -4,6 +4,7 @@ import {
   Award,
   Bell,
   Building2,
+  Clapperboard,
   ChevronRight,
   Megaphone,
   User,
@@ -42,6 +43,12 @@ export default async function MenuPage() {
       label: "Avisos",
       icon: Megaphone,
       show: can(membership.role, "view_announcements"),
+    },
+    {
+      href: "/classroom",
+      label: "Sala virtual",
+      icon: Clapperboard,
+      show: can(membership.role, "view_virtual_lessons"),
     },
     {
       href: "/notifications",
