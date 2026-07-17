@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { preload } from "swr";
 import {
   fetchClassesBoard,
-  fetchHomeDashboard,
+  fetchHomeOps,
   fetchStaffCheckin,
   fetchStudentCheckin,
 } from "@/actions/swr-data";
@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 
 function preloadRoute(href: string) {
   if (href.startsWith("/home")) {
-    void preload(swrKeys.homeDashboard, fetchHomeDashboard);
+    void preload(swrKeys.homeOps, fetchHomeOps);
     return;
   }
   if (href.startsWith("/classes")) {

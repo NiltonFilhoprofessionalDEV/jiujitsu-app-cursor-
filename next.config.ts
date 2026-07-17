@@ -7,7 +7,8 @@ const withPWA = withPWAInit({
   register: true,
   customWorkerSrc: "worker",
   fallbacks: {
-    document: "/home",
+    // Static offline page — avoid looping a failing /home document fetch
+    document: "/offline.html",
   },
 });
 

@@ -92,21 +92,20 @@ export function NowOnMatBoard({
   return (
     <section className="space-y-2">
       <div className="flex items-end justify-between gap-3 px-0.5">
-        <h2 className="font-display text-base tracking-[0.12em] text-foreground">
+        <h2 className="font-display text-lg tracking-[0.1em] text-foreground">
           Agora no tatame
         </h2>
         {sessions.length > 0 ? (
-          <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--action-red)]">
+          <span className="text-xs font-medium uppercase tracking-wide text-[var(--action-red)]">
             {sessions.length} aberta{sessions.length > 1 ? "s" : ""}
           </span>
         ) : null}
       </div>
 
       {sessions.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card px-4 py-5 text-center shadow-[var(--surface-shadow)]">
-          <p className="text-sm text-muted-foreground">
-            Nenhuma aula aberta agora. Abra a próxima turma quando o tatame
-            estiver pronto.
+        <div className="rounded-2xl border border-dashed border-border bg-card px-4 py-6 text-center shadow-[var(--surface-shadow)]">
+          <p className="text-base text-muted-foreground">
+            Nenhuma aula aberta agora.
           </p>
         </div>
       ) : (
@@ -115,20 +114,20 @@ export function NowOnMatBoard({
             <li key={session.id}>
               <Link
                 href={`/sessions/${session.id}`}
-                className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-[var(--surface-shadow)] transition hover:bg-muted active:scale-[0.99]"
+                className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-4 shadow-[var(--surface-shadow)] transition hover:bg-muted active:scale-[0.99]"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--action-red)]/12 text-[var(--action-red)]">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--action-red)]/12 text-[var(--action-red)]">
                   <CheckCircle2 className="h-5 w-5" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-foreground">
+                  <p className="truncate text-base font-semibold text-foreground">
                     {session.className}
                   </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
+                  <p className="mt-0.5 text-sm text-muted-foreground">
                     {formatStartedAt(session.startedAt)}
                   </p>
                 </div>
-                <div className="shrink-0 text-right text-[11px] tabular-nums">
+                <div className="shrink-0 text-right text-sm tabular-nums">
                   <p className="font-medium text-foreground">
                     {session.presentCount} presente
                     {session.presentCount === 1 ? "" : "s"}
@@ -170,7 +169,7 @@ export function CheckinQueueCard({
     <Link
       href={href}
       className={cn(
-        "flex items-center gap-3 rounded-2xl border px-4 py-3.5 shadow-[var(--surface-shadow)] transition active:scale-[0.99]",
+        "flex items-center gap-3 rounded-2xl border px-4 py-4 shadow-[var(--surface-shadow)] transition active:scale-[0.99]",
         pendingCount > 0
           ? "border-[color:var(--home-ops-live-border)] bg-[var(--home-ops-live)] hover:brightness-[1.03]"
           : "border-border bg-card hover:bg-muted",
@@ -178,26 +177,26 @@ export function CheckinQueueCard({
     >
       <span
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+          "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
           pendingCount > 0
             ? "bg-[var(--action-red)] text-primary-foreground"
             : "bg-muted text-muted-foreground",
         )}
       >
-        <ClipboardCheck className="h-5 w-5" />
+        <ClipboardCheck className="h-6 w-6" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-foreground">
+        <p className="text-base font-semibold text-foreground">
           Fila de check-in
         </p>
-        <p className="mt-0.5 text-xs text-muted-foreground">
+        <p className="mt-1 text-sm text-muted-foreground">
           {pendingCount > 0
-            ? `${pendingCount} pedido${pendingCount > 1 ? "s" : ""} aguardando aprovação`
-            : "Nenhum pedido pendente agora"}
+            ? `${pendingCount} pedido${pendingCount > 1 ? "s" : ""} aguardando`
+            : "Nenhum pedido pendente"}
         </p>
       </div>
       {pendingCount > 0 ? (
-        <span className="shrink-0 rounded-full bg-[var(--action-red)] px-2.5 py-1 text-xs font-bold tabular-nums text-primary-foreground">
+        <span className="shrink-0 rounded-full bg-[var(--action-red)] px-3 py-1.5 text-sm font-bold tabular-nums text-primary-foreground">
           {pendingCount > 99 ? "99+" : pendingCount}
         </span>
       ) : null}
@@ -209,10 +208,10 @@ export function NextClassCard({ next }: { next: NextClassBoard }) {
   if (!next) {
     return (
       <section className="rounded-2xl border border-dashed border-border bg-card px-4 py-5 shadow-[var(--surface-shadow)]">
-        <p className="font-display text-sm tracking-[0.14em] text-muted-foreground">
+        <p className="text-sm font-medium uppercase tracking-[0.14em] text-muted-foreground">
           Próxima aula
         </p>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="mt-2 text-base text-muted-foreground">
           Sem turmas agendadas nos próximos dias.
         </p>
       </section>
@@ -226,26 +225,26 @@ export function NextClassCard({ next }: { next: NextClassBoard }) {
 
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-[var(--surface-shadow)]">
-      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+      <p className="text-sm font-medium uppercase tracking-[0.14em] text-muted-foreground">
         Próxima aula
       </p>
       <div className="mt-2 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-base font-semibold text-foreground">
+          <p className="truncate text-lg font-semibold text-foreground">
             {next.className}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-base text-muted-foreground">
             {nextClassWhen(next)}
           </p>
           {next.instructorName ? (
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-sm text-muted-foreground">
               Prof. {next.instructorName}
             </p>
           ) : null}
         </div>
         <Link
           href={href}
-          className="inline-flex h-10 shrink-0 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+          className="inline-flex h-11 shrink-0 items-center rounded-xl bg-primary px-4 text-base font-medium text-primary-foreground transition hover:bg-primary/90"
         >
           {cta}
         </Link>

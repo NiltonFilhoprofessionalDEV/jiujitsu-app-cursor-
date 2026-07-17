@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "BJJ Pulse",
     short_name: "BJJ Pulse",
     description: "Gestão mobile-first para academias de Jiu-Jitsu",
-    start_url: "/home",
+    start_url: "/",
     display: "standalone",
     background_color: "#000000",
     theme_color: "#000000",

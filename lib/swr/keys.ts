@@ -1,5 +1,5 @@
 export const swrKeys = {
-  homeDashboard: "home:dashboard",
+  homeOps: "home:ops",
   classesBoard: "classes:board",
   checkinStudent: "checkin:student",
   checkinStaff: "checkin:staff",

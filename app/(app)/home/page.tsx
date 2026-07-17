@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getDashboardData } from "@/actions/dashboard";
-import { HomeDashboardBodyClient } from "@/components/home/home-dashboard-client";
+import { getHomeOpsBoard } from "@/actions/dashboard";
+import { HomeOpsBodyClient } from "@/components/home/home-ops-client";
 import { PageHeader } from "@/components/layout/page-header";
 import { getActiveAcademyBrief } from "@/lib/academy/active";
 import { defaultAppHomePath } from "@/lib/journey/nav";
@@ -13,7 +13,7 @@ export default async function HomePage() {
   try {
     membership = await getActiveMembership();
   } catch {
-    redirect("/select-academy");
+    redirect("/login");
   }
 
   if (
@@ -24,36 +24,36 @@ export default async function HomePage() {
   }
 
   if (!can(membership.role, "view_dashboard")) {
-    let academy;
+    let academyName = "BJJ Pulse";
     try {
-      academy = await getActiveAcademyBrief();
+      academyName = (await getActiveAcademyBrief()).name;
     } catch {
-      redirect("/select-academy");
+      /* keep default */
     }
 
     return (
       <div className="space-y-6">
         <PageHeader
           eyebrow="BJJ Pulse"
-          title={academy.name}
+          title={academyName}
           description="Faça check-in e acompanhe avisos do tatame"
         />
 
         <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-[var(--surface-shadow)]">
-          <p className="text-sm text-muted-foreground">
-            Sem dashboard de gestão neste papel. Vá direto ao check-in ou aos
+          <p className="text-base text-muted-foreground">
+            Sem painel de gestão neste papel. Vá direto ao check-in ou aos
             avisos.
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Link
               href="/checkin"
-              className="inline-flex h-11 items-center justify-center rounded-lg bg-primary text-sm font-medium text-primary-foreground"
+              className="inline-flex h-12 items-center justify-center rounded-xl bg-primary text-base font-medium text-primary-foreground"
             >
-              Fila de presença
+              Check-in
             </Link>
             <Link
               href="/announcements"
-              className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-card text-sm font-medium"
+              className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-card text-base font-medium"
             >
               Avisos
             </Link>
@@ -63,31 +63,65 @@ export default async function HomePage() {
     );
   }
 
-  let academy;
-  let data;
+  let academyName = "BJJ Pulse";
   try {
-    [academy, data] = await Promise.all([
-      getActiveAcademyBrief(),
-      getDashboardData(),
-    ]);
+    academyName = (await getActiveAcademyBrief()).name;
   } catch {
-    redirect("/select-academy");
+    /* keep default title */
+  }
+
+  let board;
+  try {
+    board = await getHomeOpsBoard();
+  } catch {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="BJJ Pulse"
+          title={academyName}
+          description="Comando do tatame"
+        />
+        <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-[var(--surface-shadow)]">
+          <p className="text-lg font-semibold text-foreground">
+            Não foi possível carregar o painel
+          </p>
+          <p className="mt-2 text-base text-muted-foreground">
+            Verifique a conexão e tente de novo. Se o erro continuar, saia e
+            entre novamente.
+          </p>
+          <div className="mt-5 grid gap-2">
+            <Link
+              href="/home"
+              className="inline-flex h-12 items-center justify-center rounded-xl bg-primary text-base font-medium text-primary-foreground"
+            >
+              Tentar de novo
+            </Link>
+            <Link
+              href="/checkin"
+              className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-card text-base font-medium"
+            >
+              Ir para check-in
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex h-12 items-center justify-center rounded-xl text-base font-medium text-muted-foreground"
+            >
+              Entrar de novo
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         eyebrow="BJJ Pulse"
-        title={academy.name}
-        description="Comando do dia no tatame"
+        title={academyName}
+        description="Comando do tatame"
       />
-
-      <HomeDashboardBodyClient
-        initialData={data}
-        canGraduate={can(membership.role, "graduate")}
-        canAnnounce={can(membership.role, "manage_announcements")}
-        canAddVideo={can(membership.role, "manage_virtual_lessons")}
-      />
+      <HomeOpsBodyClient initialData={board} />
     </div>
   );
 }
