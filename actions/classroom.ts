@@ -37,6 +37,7 @@ export type VirtualLessonRow = {
   is_favorite: boolean;
   is_liked: boolean;
   like_count: number;
+  is_watched: boolean;
 };
 
 export type VirtualLessonComment = {
@@ -77,6 +78,7 @@ function mapLesson(
   favoriteIds: Set<string>,
   likedIds: Set<string> = new Set(),
   likeCounts: Map<string, number> = new Map(),
+  watchedIds: Set<string> = new Set(),
 ): VirtualLessonRow {
   const profileEntry = row.profiles as
     | { name: string }
@@ -109,6 +111,7 @@ function mapLesson(
     is_favorite: favoriteIds.has(id),
     is_liked: likedIds.has(id),
     like_count: likeCounts.get(id) ?? 0,
+    is_watched: watchedIds.has(id),
   };
 }
 
@@ -120,6 +123,20 @@ async function loadFavoriteIds(
   const supabase = await createClient();
   const { data } = await supabase
     .from("virtual_lesson_favorites")
+    .select("lesson_id")
+    .eq("member_id", memberId)
+    .in("lesson_id", lessonIds);
+  return new Set((data ?? []).map((row) => row.lesson_id as string));
+}
+
+async function loadWatchedIds(
+  memberId: string,
+  lessonIds: string[],
+): Promise<Set<string>> {
+  if (lessonIds.length === 0) return new Set();
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("virtual_lesson_watches")
     .select("lesson_id")
     .eq("member_id", memberId)
     .in("lesson_id", lessonIds);
@@ -209,7 +226,10 @@ export async function listVirtualLessons(
 
   const ids = rows.map((row) => row.id as string);
   let favoriteIds = await loadFavoriteIds(member.id, ids);
-  const { likedIds, likeCounts } = await loadLikeState(member.id, ids);
+  const [{ likedIds, likeCounts }, watchedIds] = await Promise.all([
+    loadLikeState(member.id, ids),
+    loadWatchedIds(member.id, ids),
+  ]);
 
   if (options?.favoritesOnly) {
     if (favoriteIds.size === 0) return [];
@@ -223,6 +243,7 @@ export async function listVirtualLessons(
       favoriteIds,
       likedIds,
       likeCounts,
+      watchedIds,
     ),
   );
 }
@@ -268,12 +289,16 @@ export async function getVirtualLesson(
   }
 
   const favoriteIds = await loadFavoriteIds(member.id, [lessonId]);
-  const { likedIds, likeCounts } = await loadLikeState(member.id, [lessonId]);
+  const [{ likedIds, likeCounts }, watchedIds] = await Promise.all([
+    loadLikeState(member.id, [lessonId]),
+    loadWatchedIds(member.id, [lessonId]),
+  ]);
   return mapLesson(
     data as Record<string, unknown>,
     favoriteIds,
     likedIds,
     likeCounts,
+    watchedIds,
   );
 }
 
@@ -496,6 +521,41 @@ export async function toggleLessonLike(
       like_count: 0,
       error: "Não foi possível atualizar a curtida.",
     };
+  }
+}
+
+export async function markLessonWatched(
+  lessonId: string,
+): Promise<{ watched: boolean; error?: string }> {
+  try {
+    const member = await getActiveMembership();
+    if (!can(member.role, "view_virtual_lessons")) {
+      return { watched: false, error: "Sem permissão." };
+    }
+
+    const supabase = await createClient();
+    const { data: existing } = await supabase
+      .from("virtual_lesson_watches")
+      .select("id")
+      .eq("lesson_id", lessonId)
+      .eq("member_id", member.id)
+      .maybeSingle();
+
+    if (existing) {
+      return { watched: true };
+    }
+
+    const { error } = await supabase.from("virtual_lesson_watches").insert({
+      lesson_id: lessonId,
+      member_id: member.id,
+    });
+    if (error) return { watched: false, error: error.message };
+
+    revalidatePath("/classroom");
+    revalidatePath(`/classroom/${lessonId}`);
+    return { watched: true };
+  } catch {
+    return { watched: false, error: "Não foi possível marcar como assistido." };
   }
 }
 

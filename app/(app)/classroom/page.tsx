@@ -146,9 +146,20 @@ export default async function ClassroomPage({
                       <Play className="h-3.5 w-3.5 fill-white text-white" />
                     </span>
                   </span>
+                  {lesson.is_watched ? (
+                    <span className="absolute bottom-1 left-1 rounded bg-emerald-500/90 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
+                      Assistido
+                    </span>
+                  ) : null}
                 </span>
                 <div className="min-w-0 flex-1 py-0.5 pr-10">
-                  <p className="line-clamp-2 font-semibold text-foreground">
+                  <p
+                    className={`line-clamp-2 font-semibold ${
+                      lesson.is_watched
+                        ? "text-muted-foreground"
+                        : "text-foreground"
+                    }`}
+                  >
                     {lesson.title}
                   </p>
                   <p className="mt-1.5 text-[10px] text-muted-foreground">

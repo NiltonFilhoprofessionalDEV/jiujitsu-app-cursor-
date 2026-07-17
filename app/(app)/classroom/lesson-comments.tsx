@@ -89,20 +89,24 @@ function CommentItem({
         </div>
 
         {replyOpen ? (
-          <form action={formAction} className="mt-3 space-y-2">
+          <form action={formAction} className="mt-3 flex items-end gap-2">
             <input type="hidden" name="lesson_id" value={lessonId} />
             <input type="hidden" name="parent_id" value={comment.id} />
-            <textarea
+            <input
               name="body"
-              rows={2}
               required
               maxLength={1000}
               autoFocus
               placeholder={`Responder a ${comment.author_name}…`}
-              className="flex w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+              className="h-9 min-w-0 flex-1 rounded-full border border-input bg-transparent px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
             />
-            <Button type="submit" size="sm" className="h-8" disabled={pending}>
-              {pending ? "Enviando…" : "Responder"}
+            <Button
+              type="submit"
+              size="sm"
+              className="h-9 shrink-0 rounded-full px-3"
+              disabled={pending}
+            >
+              {pending ? "…" : "Enviar"}
             </Button>
           </form>
         ) : null}
@@ -146,28 +150,27 @@ export function LessonComments({
     comments.reduce((acc, comment) => acc + comment.replies.length, 0);
 
   return (
-    <section className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-[var(--surface-shadow)]">
-      <div>
-        <h2 className="text-sm font-semibold text-foreground">
-          Comentários ({totalCount})
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Dúvidas e discussões só da academia · responda como no YouTube
-        </p>
-      </div>
+    <section className="space-y-4">
+      <h2 className="text-sm font-semibold text-foreground">
+        Comentários ({totalCount})
+      </h2>
 
-      <form action={formAction} className="space-y-2">
+      <form action={formAction} className="flex items-end gap-2">
         <input type="hidden" name="lesson_id" value={lessonId} />
-        <textarea
+        <input
           name="body"
-          rows={3}
           required
           maxLength={1000}
-          placeholder="Pergunte ao professor ou comente a técnica…"
-          className="flex w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+          placeholder="Deixe seu comentário ou dúvida"
+          className="h-10 min-w-0 flex-1 rounded-full border border-input bg-transparent px-4 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
         />
-        <Button type="submit" className="h-10 w-full" disabled={pending}>
-          {pending ? "Enviando…" : "Comentar"}
+        <Button
+          type="submit"
+          size="sm"
+          className="h-10 shrink-0 rounded-full px-4"
+          disabled={pending}
+        >
+          {pending ? "…" : "Enviar"}
         </Button>
       </form>
 

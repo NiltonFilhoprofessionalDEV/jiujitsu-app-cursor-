@@ -49,27 +49,36 @@ export default async function ClassroomLessonPage({
           <ArrowLeft className="h-4 w-4" />
           Voltar para Galeria
         </Link>
-        <div className="flex items-center gap-2">
-          <LessonLikeButton
-            lessonId={lesson.id}
-            initialLiked={lesson.is_liked}
-            initialCount={lesson.like_count}
-          />
-          <LessonFavoriteButton
-            lessonId={lesson.id}
-            initialFavorite={lesson.is_favorite}
-          />
-          {canManage ? (
-            <LessonActionsMenu lessonId={lesson.id} title={lesson.title} />
-          ) : null}
-        </div>
+        {canManage ? (
+          <LessonActionsMenu lessonId={lesson.id} title={lesson.title} />
+        ) : null}
       </div>
 
       <YoutubePlayer
         videoId={lesson.youtube_video_id}
         orientation={lesson.orientation}
         title={lesson.title}
+        lessonId={lesson.id}
+        initiallyWatched={lesson.is_watched}
       />
+
+      <div className="flex items-center gap-2">
+        <LessonLikeButton
+          lessonId={lesson.id}
+          initialLiked={lesson.is_liked}
+          initialCount={lesson.like_count}
+        />
+        <LessonFavoriteButton
+          lessonId={lesson.id}
+          initialFavorite={lesson.is_favorite}
+        />
+        {lesson.is_watched ? (
+          <span className="ml-auto rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-400">
+            Assistido
+          </span>
+        ) : null}
+      </div>
+
       <header className="space-y-2">
         <BlackBeltTitle className="font-display text-2xl tracking-[0.06em] text-[var(--bjj-text)]">
           {lesson.title}

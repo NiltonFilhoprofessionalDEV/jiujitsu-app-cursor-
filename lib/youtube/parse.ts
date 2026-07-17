@@ -36,6 +36,17 @@ export function extractYoutubeId(raw: string): string | null {
   }
 }
 
-export function youtubeEmbedUrl(videoId: string): string {
-  return `https://www.youtube.com/embed/${videoId}`;
+export function youtubeEmbedUrl(
+  videoId: string,
+  options?: { enableJsApi?: boolean },
+): string {
+  const params = new URLSearchParams({
+    rel: "0",
+    modestbranding: "1",
+    playsinline: "1",
+  });
+  if (options?.enableJsApi) {
+    params.set("enablejsapi", "1");
+  }
+  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
 }
