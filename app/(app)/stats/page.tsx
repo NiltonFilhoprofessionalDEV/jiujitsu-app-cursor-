@@ -23,7 +23,7 @@ export default async function StatsPage() {
             Relatórios da academia
           </p>
         </header>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-xl">
+        <div className="rounded-2xl border border-border bg-card p-8 text-center backdrop-blur-xl">
           <p className="text-sm text-muted-foreground">
             Os gráficos de gestão estão disponíveis para instrutores e
             administradores.

@@ -51,7 +51,7 @@ export default async function NotificationsPage() {
           <form action={markAllNotificationsRead}>
             <button
               type="submit"
-              className="text-xs font-medium text-[var(--accent)]"
+              className="text-xs font-medium text-[var(--action-red)]"
             >
               Marcar todas
             </button>
@@ -71,8 +71,8 @@ export default async function NotificationsPage() {
               key={n.id}
               className={`rounded-2xl border p-4 backdrop-blur-xl ${
                 n.is_read
-                  ? "border-white/10 bg-white/5"
-                  : "border-[var(--accent)]/30 bg-[var(--accent)]/5"
+                  ? "border-border bg-card"
+                  : "border-[var(--accent)]/30 bg-[var(--action-red)]/5"
               }`}
             >
               <div className="flex items-start justify-between gap-3">

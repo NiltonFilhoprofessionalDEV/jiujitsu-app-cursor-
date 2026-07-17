@@ -79,10 +79,10 @@ export default async function MenuPage() {
           <Link
             key={href}
             href={href}
-            className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-xl transition hover:bg-white/[0.07]"
+            className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 backdrop-blur-xl transition hover:bg-muted"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5">
-              <Icon className="h-4 w-4 text-[var(--accent)]" />
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-card">
+              <Icon className="h-4 w-4 text-[var(--action-red)]" />
             </span>
             <span className="flex-1 text-sm font-medium text-foreground">
               {label}

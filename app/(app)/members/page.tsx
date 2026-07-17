@@ -78,7 +78,7 @@ export default async function MembersPage({
       {canManage ? <CreateInviteForm /> : null}
 
       <form
-        className="grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-xl"
+        className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-card p-3 backdrop-blur-xl"
         method="get"
       >
         <div className="space-y-1">
@@ -137,7 +137,7 @@ export default async function MembersPage({
         </div>
         <button
           type="submit"
-          className="col-span-3 mt-1 h-10 rounded-lg border border-white/10 bg-white/5 text-sm font-medium text-foreground hover:bg-white/10"
+          className="col-span-3 mt-1 h-10 rounded-lg border border-border bg-card text-sm font-medium text-foreground hover:bg-muted"
         >
           Filtrar
         </button>
@@ -145,7 +145,7 @@ export default async function MembersPage({
 
       <div className="space-y-2">
         {members.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl">
+          <div className="rounded-2xl border border-border bg-card p-6 text-center backdrop-blur-xl">
             <p className="text-sm text-muted-foreground">
               Nenhum membro encontrado com esses filtros.
             </p>
@@ -163,7 +163,7 @@ export default async function MembersPage({
             <Link
               key={member.id}
               href={`/members/${member.id}`}
-              className="block rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/[0.07] backdrop-blur-xl"
+              className="block rounded-2xl border border-border bg-card p-4 transition hover:bg-muted backdrop-blur-xl"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -180,7 +180,7 @@ export default async function MembersPage({
                       ? "shrink-0 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-400"
                       : member.status === "suspended"
                         ? "shrink-0 rounded-md bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-400"
-                        : "shrink-0 rounded-md bg-white/10 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                        : "shrink-0 rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
                   }
                 >
                   {STATUS_LABELS[member.status]}

@@ -31,7 +31,7 @@ export default function CreateAcademyPage() {
         </p>
       </header>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-xl backdrop-blur-xl">
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-xl backdrop-blur-xl">
         <form action={formAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Nome da academia *</Label>

@@ -27,7 +27,7 @@ function CreateUnitForm({ canEdit }: { canEdit: boolean }) {
   return (
     <form
       action={formAction}
-      className="space-y-3 rounded-xl border border-dashed border-white/15 p-4"
+      className="space-y-3 rounded-xl border border-dashed border-border p-4"
     >
       <p className="text-sm font-medium text-foreground">Nova unidade</p>
       <div className="space-y-2">
@@ -91,7 +91,7 @@ function UnitCard({
   return (
     <form
       action={formAction}
-      className="space-y-3 rounded-xl border border-white/10 bg-black/20 p-4"
+      className="space-y-3 rounded-xl border border-border bg-black/20 p-4"
     >
       <input type="hidden" name="id" value={unit.id} />
       <div className="flex items-center justify-between gap-2">
@@ -201,7 +201,7 @@ export function UnitsManager({
   canEdit: boolean;
 }) {
   return (
-    <section className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
+    <section className="space-y-4 rounded-2xl border border-border bg-card p-5 backdrop-blur-xl">
       <div>
         <h2 className="text-base font-semibold text-foreground">Unidades</h2>
         <p className="text-xs text-muted-foreground">

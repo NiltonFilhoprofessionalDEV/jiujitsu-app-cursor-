@@ -35,7 +35,7 @@ export default async function CheckinPage() {
 
       <div className="space-y-3">
         {sessions.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl">
+          <div className="rounded-2xl border border-border bg-card p-6 text-center backdrop-blur-xl">
             <p className="text-sm text-muted-foreground">
               Nenhuma aula aberta no momento.
             </p>
@@ -49,7 +49,7 @@ export default async function CheckinPage() {
           sessions.map((session) => (
             <div
               key={session.id}
-              className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl"
+              className="space-y-3 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl"
             >
               <div>
                 <p className="font-semibold text-foreground">
@@ -67,7 +67,7 @@ export default async function CheckinPage() {
               ) : canOpen ? (
                 <a
                   href={`/sessions/${session.id}`}
-                  className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-white/15 bg-white/5 text-sm font-medium text-foreground hover:bg-white/10"
+                  className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-border bg-card text-sm font-medium text-foreground hover:bg-muted"
                 >
                   Gerenciar aula
                 </a>

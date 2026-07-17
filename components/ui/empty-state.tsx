@@ -17,7 +17,7 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-dashed border-white/15 bg-gradient-to-b from-white/[0.07] to-transparent p-8 text-center backdrop-blur-xl",
+        "rounded-2xl border border-dashed border-border bg-gradient-to-b from-white/[0.07] to-transparent p-8 text-center backdrop-blur-xl",
         className,
       )}
     >

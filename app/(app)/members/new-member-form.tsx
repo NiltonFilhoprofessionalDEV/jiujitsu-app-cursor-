@@ -36,7 +36,7 @@ export function NewMemberForm({
 
   return (
     <form action={formAction} className="space-y-4">
-      <p className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-muted-foreground">
+      <p className="rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
         A pessoa precisa ter feito signup antes. Informe o mesmo e-mail da
         conta para vinculá-la à academia.
       </p>

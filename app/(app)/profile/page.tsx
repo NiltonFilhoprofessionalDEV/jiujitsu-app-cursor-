@@ -4,6 +4,7 @@ import { ROLE_LABELS } from "@/app/(app)/members/labels";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function ProfilePage() {
   let membership;
@@ -27,7 +28,7 @@ export default async function ProfilePage() {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
+        <h1 className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
           Perfil
         </h1>
         <p className="text-sm text-[var(--bjj-muted)]">
@@ -35,9 +36,9 @@ export default async function ProfilePage() {
         </p>
       </header>
 
-      <section className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-5 backdrop-blur-xl">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)]/20 text-lg font-semibold text-[var(--accent)]">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--action-red)]/20 font-display text-xl text-[var(--action-red)]">
             {(profile?.name ?? user?.email ?? "?").slice(0, 1).toUpperCase()}
           </div>
           <div className="min-w-0">
@@ -50,7 +51,7 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        <dl className="space-y-3 border-t border-white/10 pt-4 text-sm">
+        <dl className="space-y-3 border-t border-border pt-4 text-sm">
           <div className="flex justify-between gap-3">
             <dt className="text-muted-foreground">Papel</dt>
             <dd className="font-medium text-foreground">
@@ -66,11 +67,13 @@ export default async function ProfilePage() {
         </dl>
       </section>
 
+      <ThemeToggle />
+
       <form action={logout}>
         <Button
           type="submit"
           variant="outline"
-          className="h-11 w-full border-white/15"
+          className="h-11 w-full border-border"
         >
           Sair
         </Button>

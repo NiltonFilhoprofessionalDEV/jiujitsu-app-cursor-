@@ -47,7 +47,7 @@ export function EditMemberForm({
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="id" value={member.id} />
 
-      <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-3">
+      <div className="rounded-xl border border-border bg-card px-3 py-3">
         <p className="font-semibold text-foreground">{member.profile.name}</p>
         <p className="text-xs text-muted-foreground">{member.profile.email}</p>
       </div>

@@ -40,7 +40,7 @@ export function NewGraduationForm({
 
   if (members.length === 0) {
     return (
-      <p className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm text-muted-foreground">
+      <p className="rounded-xl border border-border bg-card px-3 py-3 text-sm text-muted-foreground">
         Nenhum membro ativo disponível para graduação.
       </p>
     );

@@ -48,7 +48,7 @@ export default async function HomePage() {
       <div className="space-y-6">
         <header className="flex items-start justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
+            <h1 className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
               Home
             </h1>
             <p className="text-sm text-[var(--bjj-muted)]">
@@ -57,19 +57,19 @@ export default async function HomePage() {
           </div>
           <Link
             href="/notifications"
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-foreground"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground"
             aria-label="Notificações"
           >
             <Bell className="h-5 w-5" />
             {(unreadCount ?? 0) > 0 ? (
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-bold text-black">
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--action-red)] px-1 text-[10px] font-bold text-primary-foreground">
                 {(unreadCount ?? 0) > 9 ? "9+" : unreadCount}
               </span>
             ) : null}
           </Link>
         </header>
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl">
+        <div className="rounded-2xl border border-border bg-card p-6 text-center backdrop-blur-xl">
           <p className="text-sm text-muted-foreground">
             Seu papel não inclui o dashboard de gestão. Use o check-in e o menu
             para avisos e perfil.
@@ -83,7 +83,7 @@ export default async function HomePage() {
             </Link>
             <Link
               href="/announcements"
-              className="inline-flex h-11 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-sm font-medium"
+              className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-card text-sm font-medium"
             >
               Avisos
             </Link>
@@ -113,12 +113,12 @@ export default async function HomePage() {
         </div>
         <Link
           href="/notifications"
-          className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-foreground"
+          className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground"
           aria-label="Notificações"
         >
           <Bell className="h-5 w-5" />
           {(unreadCount ?? 0) > 0 ? (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-bold text-black">
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--action-red)] px-1 text-[10px] font-bold text-primary-foreground">
               {(unreadCount ?? 0) > 9 ? "9+" : unreadCount}
             </span>
           ) : null}

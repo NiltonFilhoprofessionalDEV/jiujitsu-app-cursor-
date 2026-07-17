@@ -60,7 +60,7 @@ export default async function ClassDetailPage({
             className={
               klass.is_active
                 ? "shrink-0 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-400"
-                : "shrink-0 rounded-md bg-white/10 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                : "shrink-0 rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
             }
           >
             {klass.is_active ? "Ativa" : "Inativa"}
@@ -72,7 +72,7 @@ export default async function ClassDetailPage({
         klass.maximum_age != null ||
         klass.minimum_belt ||
         klass.maximum_belt) && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-muted-foreground backdrop-blur-xl">
+        <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground backdrop-blur-xl">
           {klass.minimum_age != null || klass.maximum_age != null ? (
             <p>
               Idade:{" "}
@@ -92,7 +92,7 @@ export default async function ClassDetailPage({
 
       {canOpen ? <OpenSessionButton classId={klass.id} /> : null}
 
-      <section className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+      <section className="space-y-3 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl">
         <h2 className="text-sm font-semibold text-foreground">
           Horários semanais
         </h2>

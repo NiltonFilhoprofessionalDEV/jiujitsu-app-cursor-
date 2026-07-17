@@ -16,10 +16,10 @@ export default async function LoginPage({
   return (
     <div className="flex flex-1 flex-col justify-center gap-8">
       <header className="space-y-2 text-center">
-        <p className="text-2xl font-bold tracking-tight text-foreground">
+        <p className="font-display text-4xl tracking-[0.08em] text-foreground">
           BJJ Manager
         </p>
-        <h1 className="text-lg font-medium text-muted-foreground">
+        <h1 className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
           Entrar na sua conta
         </h1>
       </header>

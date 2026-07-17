@@ -31,7 +31,7 @@ export function AcademyEditor({
   }, [state]);
 
   return (
-    <section className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
+    <section className="space-y-4 rounded-2xl border border-border bg-card p-5 backdrop-blur-xl">
       <h2 className="text-base font-semibold text-foreground">Dados gerais</h2>
 
       <form action={formAction} className="space-y-4">

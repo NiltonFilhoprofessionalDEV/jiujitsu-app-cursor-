@@ -28,7 +28,7 @@ export function MarkReadButton({ id }: { id: string }) {
         variant="ghost"
         size="sm"
         disabled={pending}
-        className="h-8 text-xs text-[var(--accent)]"
+        className="h-8 text-xs text-[var(--action-red)]"
       >
         Marcar lida
       </Button>

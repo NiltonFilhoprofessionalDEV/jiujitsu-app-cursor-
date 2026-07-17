@@ -25,7 +25,7 @@ export function CloseSessionButton({ sessionId }: { sessionId: string }) {
         type="submit"
         disabled={pending}
         variant="outline"
-        className="h-11 w-full border-white/15 bg-white/5"
+        className="h-11 w-full border-border bg-card"
       >
         {pending ? "Encerrando…" : "Encerrar aula"}
       </Button>

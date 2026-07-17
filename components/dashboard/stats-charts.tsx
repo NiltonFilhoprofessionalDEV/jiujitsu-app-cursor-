@@ -19,7 +19,7 @@ type ChartCardProps = {
 
 function ChartCard({ title, children }: ChartCardProps) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+    <section className="rounded-2xl border border-border bg-card p-4 backdrop-blur-xl">
       <h2 className="mb-3 text-sm font-medium text-foreground">{title}</h2>
       <div className="h-48 w-full">{children}</div>
     </section>
@@ -56,7 +56,7 @@ export function StatsCharts({
               <XAxis dataKey="belt" tick={{ fill: "#94a3b8", fontSize: 10 }} />
               <YAxis allowDecimals={false} tick={{ fill: "#94a3b8", fontSize: 10 }} />
               <Tooltip contentStyle={tooltipStyle} />
-              <Bar dataKey="count" fill="#22c55e" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="count" fill="#e10600" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}

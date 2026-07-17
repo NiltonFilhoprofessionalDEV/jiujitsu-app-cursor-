@@ -59,7 +59,7 @@ export function ClassSchedulesManager({
           schedules.map((schedule) => (
             <div
               key={schedule.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2"
+              className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-2"
             >
               <div>
                 <p className="text-sm font-medium text-foreground">
@@ -93,7 +93,7 @@ export function ClassSchedulesManager({
       {canManage ? (
         <form
           action={addAction}
-          className="space-y-3 rounded-xl border border-white/10 bg-white/5 p-3"
+          className="space-y-3 rounded-xl border border-border bg-card p-3"
         >
           <p className="text-sm font-medium text-foreground">Novo horário</p>
           <input type="hidden" name="class_id" value={classId} />

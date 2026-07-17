@@ -27,7 +27,7 @@ export function RequestCheckinButton({ sessionId }: { sessionId: string }) {
       <Button
         type="submit"
         disabled={pending}
-        className="h-10 w-full bg-[var(--accent)] text-black hover:bg-[var(--accent)]/90"
+        className="h-10 w-full bg-[var(--action-red)] text-primary-foreground hover:bg-[var(--action-red)]/90"
       >
         {pending ? "Enviando…" : "Registrar presença"}
       </Button>

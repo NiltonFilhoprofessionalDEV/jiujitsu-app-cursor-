@@ -71,7 +71,7 @@ export default async function SessionPage({ params }: { params: Params }) {
             className={
               session.status === "open"
                 ? "shrink-0 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-400"
-                : "shrink-0 rounded-md bg-white/10 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                : "shrink-0 rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
             }
           >
             {session.status === "open" ? "Aberta" : session.status}
@@ -84,7 +84,7 @@ export default async function SessionPage({ params }: { params: Params }) {
       ) : null}
 
       {canApprove ? (
-        <section className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+        <section className="space-y-3 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl">
           <h2 className="text-sm font-semibold text-foreground">
             Pedidos pendentes
           </h2>

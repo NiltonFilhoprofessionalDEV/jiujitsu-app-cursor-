@@ -24,7 +24,7 @@ export default async function InvitePage({ params }: { params: Params }) {
   if (!preview) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center px-4">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl">
+        <div className="rounded-2xl border border-border bg-card p-6 text-center backdrop-blur-xl">
           <h1 className="text-xl font-semibold text-[var(--bjj-text)]">
             Convite inválido
           </h1>
@@ -46,7 +46,7 @@ export default async function InvitePage({ params }: { params: Params }) {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center px-4">
-      <div className="space-y-6 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+      <div className="space-y-6 rounded-2xl border border-border bg-card p-6 backdrop-blur-xl">
         <header className="space-y-2 text-center">
           <p className="text-sm font-medium text-primary">BJJ Manager</p>
           <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
@@ -77,7 +77,7 @@ export default async function InvitePage({ params }: { params: Params }) {
             </Link>
             <Link
               href={`/login?next=${encodeURIComponent(next)}`}
-              className="flex h-11 w-full items-center justify-center rounded-lg border border-white/15 bg-white/5 text-sm font-medium text-[var(--bjj-text)] hover:bg-white/10"
+              className="flex h-11 w-full items-center justify-center rounded-lg border border-border bg-card text-sm font-medium text-[var(--bjj-text)] hover:bg-muted"
             >
               Já tenho conta — Entrar
             </Link>

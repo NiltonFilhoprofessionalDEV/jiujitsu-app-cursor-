@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Gestão mobile-first para academias de Jiu-Jitsu",
     start_url: "/home",
     display: "standalone",
-    background_color: "#070b16",
-    theme_color: "#070b16",
+    background_color: "#000000",
+    theme_color: "#000000",
     orientation: "portrait",
     lang: "pt-BR",
     icons: [

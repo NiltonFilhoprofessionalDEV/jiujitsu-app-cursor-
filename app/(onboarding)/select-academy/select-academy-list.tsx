@@ -38,7 +38,7 @@ export function SelectAcademyList({ academies }: { academies: MyAcademy[] }) {
       ) : null}
 
       {academies.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl">
+        <div className="rounded-2xl border border-border bg-card p-6 text-center backdrop-blur-xl">
           <p className="text-sm text-muted-foreground">
             Nenhuma academia encontrada.
           </p>
@@ -54,7 +54,7 @@ export function SelectAcademyList({ academies }: { academies: MyAcademy[] }) {
           <form
             key={academy.id}
             action={formAction}
-            className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-xl backdrop-blur-xl"
+            className="rounded-2xl border border-border bg-card p-4 shadow-xl backdrop-blur-xl"
           >
             <input type="hidden" name="academyId" value={academy.id} />
             <div className="flex items-center justify-between gap-3">

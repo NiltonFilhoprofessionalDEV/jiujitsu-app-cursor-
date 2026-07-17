@@ -4,53 +4,117 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  BJJ Manager — Fight Poster System
+  Subject: dojo ops app. Vernacular: tatami, black belt, competition posters.
+  Signature: action-red circular Check-in FAB (hero motif from reference).
+  Dark is default. Light keeps the same red + ink typography on clean white.
+*/
+
 :root {
-  /* Brand-only tokens (--bjj-*) — avoid colliding with shadcn semantic vars */
-  --bjj-bg0: #070b16;
-  --bjj-bg1: #121a2e;
-  --bjj-card-border: rgba(255, 255, 255, 0.08);
-  --bjj-text: #f8fafc;
-  --bjj-muted: #94a3b8;
-  --bjj-action-blue: #3b82f6;
-  --bjj-action-purple: #8b5cf6;
-  --bjj-action-pink: #ec4899;
-  --bjj-danger: #f97316;
+  /* Light mode */
+  --bjj-bg0: #f4f4f5;
+  --bjj-bg1: #ffffff;
+  --bjj-text: #0a0a0a;
+  --bjj-muted: #737373;
+  --bjj-danger: #b91c1c;
+  --bjj-action-1: #e10600;
+  --bjj-action-2: #0a0a0a;
+  --bjj-action-3: #525252;
 
-  /* Shared / intentional: --accent is brand green AND shadcn accent */
-  --accent: #22c55e;
-  --radius: 1.25rem;
+  --ink: #0a0a0a;
+  --action-red: #e10600;
+  --matte: #fafafa;
+  --mist: #a3a3a3;
 
-  /* shadcn semantic tokens (dark + green accent) */
-  --background: #070b16;
-  --foreground: #f8fafc;
-  --card: rgba(255, 255, 255, 0.06);
-  --card-foreground: #f8fafc;
-  --popover: #121a2e;
-  --popover-foreground: #f8fafc;
-  --primary: #22c55e;
-  --primary-foreground: #052e16;
-  --secondary: rgba(255, 255, 255, 0.08);
-  --secondary-foreground: #f8fafc;
+  --background: #fafafa;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+  --primary: #e10600;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #0a0a0a;
+  --muted: #f4f4f5;
+  --muted-foreground: #737373;
+  --accent: #e10600;
+  --accent-foreground: #ffffff;
+  --destructive: #b91c1c;
+  --border: rgba(10, 10, 10, 0.1);
+  --input: rgba(10, 10, 10, 0.12);
+  --ring: #e10600;
+  --chart-1: #e10600;
+  --chart-2: #0a0a0a;
+  --chart-3: #737373;
+  --chart-4: #dc2626;
+  --chart-5: #a3a3a3;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0a0a0a;
+  --sidebar-primary: #e10600;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f4f4f5;
+  --sidebar-accent-foreground: #0a0a0a;
+  --sidebar-border: rgba(10, 10, 10, 0.1);
+  --sidebar-ring: #e10600;
+
+  --nav-bg: rgba(255, 255, 255, 0.92);
+  --nav-ring: #ffffff;
+  --fab-glow: rgba(225, 6, 0, 0.45);
+  --radius: 0.75rem;
+}
+
+.dark {
+  --bjj-bg0: #000000;
+  --bjj-bg1: #0a0a0a;
+  --bjj-text: #f5f5f5;
+  --bjj-muted: #a3a3a3;
+  --bjj-danger: #ff4d4d;
+  --bjj-action-1: #e10600;
+  --bjj-action-2: #ffffff;
+  --bjj-action-3: #a3a3a3;
+
+  --ink: #000000;
+  --action-red: #e10600;
+  --matte: #0a0a0a;
+  --mist: #a3a3a3;
+
+  --background: #000000;
+  --foreground: #f5f5f5;
+  --card: rgba(255, 255, 255, 0.04);
+  --card-foreground: #f5f5f5;
+  --popover: #141414;
+  --popover-foreground: #f5f5f5;
+  --primary: #e10600;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.06);
+  --secondary-foreground: #f5f5f5;
   --muted: rgba(255, 255, 255, 0.06);
-  --muted-foreground: #94a3b8;
-  --accent-foreground: #052e16;
-  --destructive: #f97316;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.1);
-  --ring: #22c55e;
-  --chart-1: #22c55e;
-  --chart-2: #3b82f6;
-  --chart-3: #8b5cf6;
-  --chart-4: #ec4899;
-  --chart-5: #94a3b8;
-  --sidebar: #121a2e;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #22c55e;
-  --sidebar-primary-foreground: #052e16;
-  --sidebar-accent: rgba(255, 255, 255, 0.08);
-  --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #22c55e;
+  --muted-foreground: #a3a3a3;
+  --accent: #e10600;
+  --accent-foreground: #ffffff;
+  --destructive: #ff4d4d;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #e10600;
+  --chart-1: #e10600;
+  --chart-2: #f5f5f5;
+  --chart-3: #a3a3a3;
+  --chart-4: #dc2626;
+  --chart-5: #525252;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #f5f5f5;
+  --sidebar-primary: #e10600;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.06);
+  --sidebar-accent-foreground: #f5f5f5;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #e10600;
+
+  --nav-bg: rgba(10, 10, 10, 0.94);
+  --nav-ring: #0a0a0a;
+  --fab-glow: rgba(225, 6, 0, 0.55);
 }
 
 @theme inline {
@@ -85,61 +149,46 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --radius-sm: calc(var(--radius) - 0.5rem);
-  --radius-md: calc(var(--radius) - 0.25rem);
+  --radius-sm: calc(var(--radius) - 0.25rem);
+  --radius-md: calc(var(--radius) - 0.125rem);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 0.25rem);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-  --font-sans: var(--font-plus-jakarta);
-  --font-heading: var(--font-plus-jakarta);
-}
-
-.dark {
-  --background: #070b16;
-  --foreground: #f8fafc;
-  --card: rgba(255, 255, 255, 0.06);
-  --card-foreground: #f8fafc;
-  --popover: #121a2e;
-  --popover-foreground: #f8fafc;
-  --primary: #22c55e;
-  --primary-foreground: #052e16;
-  --secondary: rgba(255, 255, 255, 0.08);
-  --secondary-foreground: #f8fafc;
-  --muted: rgba(255, 255, 255, 0.06);
-  --muted-foreground: #94a3b8;
-  --accent: #22c55e;
-  --accent-foreground: #052e16;
-  --destructive: #f97316;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.1);
-  --ring: #22c55e;
-  --chart-1: #22c55e;
-  --chart-2: #3b82f6;
-  --chart-3: #8b5cf6;
-  --chart-4: #ec4899;
-  --chart-5: #94a3b8;
-  --sidebar: #121a2e;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #22c55e;
-  --sidebar-primary-foreground: #052e16;
-  --sidebar-accent: rgba(255, 255, 255, 0.08);
-  --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #22c55e;
+  --radius-2xl: calc(var(--radius) + 0.5rem);
+  --radius-3xl: calc(var(--radius) + 0.75rem);
+  --radius-4xl: calc(var(--radius) + 1rem);
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-display);
 }
 
 body {
   min-height: 100dvh;
   color: var(--bjj-text);
-  background: linear-gradient(
-    165deg,
-    var(--bjj-bg0) 0%,
-    var(--bjj-bg1) 55%,
-    #0d1526 100%
-  );
+  background:
+    radial-gradient(
+      120% 80% at 100% -10%,
+      color-mix(in srgb, var(--action-red) 18%, transparent),
+      transparent 55%
+    ),
+    linear-gradient(180deg, var(--bjj-bg0) 0%, var(--bjj-bg1) 48%, var(--bjj-bg0) 100%);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.dark body {
+  background:
+    radial-gradient(
+      100% 70% at 85% -5%,
+      color-mix(in srgb, var(--action-red) 22%, transparent),
+      transparent 50%
+    ),
+    linear-gradient(180deg, #000000 0%, #0a0a0a 45%, #000000 100%);
+}
+
+h1,
+h2,
+.font-display {
+  font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 @layer base {
@@ -151,5 +200,15 @@ body {
   }
   html {
     @apply font-sans;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

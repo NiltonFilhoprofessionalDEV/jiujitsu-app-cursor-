@@ -81,7 +81,7 @@ export default async function MemberDetailPage({
         </p>
       </header>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
+      <div className="rounded-2xl border border-border bg-card p-5 backdrop-blur-xl">
         <EditMemberForm
           member={member}
           assignableRoles={assignableRoles(membership.role)}

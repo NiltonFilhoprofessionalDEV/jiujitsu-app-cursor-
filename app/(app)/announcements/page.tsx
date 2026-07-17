@@ -49,7 +49,7 @@ export default async function AnnouncementsPage() {
       </header>
 
       {canManage ? (
-        <section className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+        <section className="space-y-3 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl">
           <h2 className="text-sm font-medium text-foreground">Novo aviso</h2>
           <NewAnnouncementForm />
         </section>
@@ -65,7 +65,7 @@ export default async function AnnouncementsPage() {
           announcements.map((a) => (
             <article
               key={a.id}
-              className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl"
+              className="rounded-2xl border border-border bg-card p-4 backdrop-blur-xl"
             >
               <div className="flex items-start justify-between gap-3">
                 <h2 className="font-semibold text-foreground">{a.title}</h2>

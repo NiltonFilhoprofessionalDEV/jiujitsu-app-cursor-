@@ -16,7 +16,10 @@ const items = [
 export function BottomNav() {
   const pathname = usePathname();
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 mx-auto max-w-lg border-t border-white/10 bg-[#0b1220]/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+    <nav
+      className="fixed bottom-0 inset-x-0 z-50 mx-auto max-w-lg border-t border-border pb-[env(safe-area-inset-bottom)] backdrop-blur-md"
+      style={{ background: "var(--nav-bg)" }}
+    >
       <ul className="grid grid-cols-5 items-end px-2 pt-2 pb-2">
         {items.map(({ href, label, icon: Icon, fab }) => {
           const active = pathname.startsWith(href);
@@ -31,20 +34,31 @@ export function BottomNav() {
                   <span
                     className={cn(
                       "relative flex h-16 w-16 items-center justify-center rounded-full",
-                      "bg-gradient-to-b from-[#4ade80] to-[var(--accent)]",
-                      "text-black shadow-[0_0_28px_rgba(34,197,94,0.55),0_8px_16px_rgba(0,0,0,0.35)]",
-                      "ring-4 ring-[#0b1220]",
+                      "bg-gradient-to-b from-[#ff3b30] to-[var(--action-red)]",
+                      "text-white",
+                      "ring-4",
                       "transition-transform duration-200 group-active:scale-95",
-                      active && "ring-[var(--accent)]/40",
+                      active && "scale-[1.02]",
                     )}
+                    style={{
+                      boxShadow: `0 0 28px var(--fab-glow), 0 10px 18px rgba(0,0,0,0.35)`,
+                      // ring color follows theme surface
+                      outlineColor: "var(--nav-ring)",
+                    }}
                   >
-                    <span className="pointer-events-none absolute inset-0 rounded-full bg-white/20 opacity-60 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
+                    <span
+                      className="pointer-events-none absolute inset-0 rounded-full ring-4"
+                      style={{ boxShadow: "0 0 0 4px var(--nav-ring)" }}
+                    />
+                    <span className="pointer-events-none absolute inset-0 rounded-full bg-white/25 opacity-70 [mask-image:linear-gradient(to_bottom,white,transparent)]" />
                     <Icon className="relative h-7 w-7 stroke-[2.25]" />
                   </span>
                   <span
                     className={cn(
-                      "text-[10px] font-semibold tracking-wide",
-                      active ? "text-[var(--accent)]" : "text-white/70",
+                      "font-display text-[11px] tracking-[0.14em]",
+                      active
+                        ? "text-[var(--action-red)]"
+                        : "text-muted-foreground",
                     )}
                   >
                     {label}
@@ -58,12 +72,16 @@ export function BottomNav() {
               <Link
                 href={href}
                 className={cn(
-                  "flex flex-col items-center gap-1 pb-0.5 text-[10px]",
-                  active ? "text-[var(--accent)]" : "text-white/50",
+                  "flex flex-col items-center gap-1 pb-0.5 text-[10px] tracking-wide",
+                  active
+                    ? "text-[var(--action-red)]"
+                    : "text-muted-foreground",
                 )}
               >
                 <Icon className="h-5 w-5" />
-                {label}
+                <span className={active ? "font-semibold" : undefined}>
+                  {label}
+                </span>
               </Link>
             </li>
           );

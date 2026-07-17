@@ -12,7 +12,7 @@ export function CreateInviteForm() {
   const [state, formAction, pending] = useActionState(createInvite, initialState);
 
   return (
-    <div className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+    <div className="space-y-4 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl">
       <div>
         <h2 className="text-base font-semibold text-[var(--bjj-text)]">
           Convidar pelo WhatsApp
@@ -29,7 +29,7 @@ export function CreateInviteForm() {
             id="role"
             name="role"
             defaultValue="student"
-            className="flex h-10 w-full rounded-lg border border-white/10 bg-black/20 px-3 text-sm text-[var(--bjj-text)]"
+            className="flex h-10 w-full rounded-lg border border-border bg-black/20 px-3 text-sm text-[var(--bjj-text)]"
           >
             <option value="student">Aluno</option>
             <option value="guardian">Responsável</option>
@@ -85,7 +85,7 @@ export function CreateInviteForm() {
                 href={state.whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-10 flex-1 items-center justify-center rounded-lg bg-[#25D366] text-sm font-medium text-black hover:opacity-90"
+                className="inline-flex h-10 flex-1 items-center justify-center rounded-lg bg-[#25D366] text-sm font-medium text-primary-foreground hover:opacity-90"
               >
                 Abrir WhatsApp
               </a>

@@ -59,7 +59,7 @@ export default async function ClassesPage() {
               <Link
                 key={klass.id}
                 href={`/classes/${klass.id}`}
-                className="block rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/[0.07] backdrop-blur-xl"
+                className="block rounded-2xl border border-border bg-card p-4 transition hover:bg-muted backdrop-blur-xl"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -76,7 +76,7 @@ export default async function ClassesPage() {
                     className={
                       klass.is_active
                         ? "shrink-0 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-400"
-                        : "shrink-0 rounded-md bg-white/10 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                        : "shrink-0 rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
                     }
                   >
                     {klass.is_active ? "Ativa" : "Inativa"}

@@ -56,7 +56,7 @@ export default async function GraduationsPage() {
       </header>
 
       {canGraduate ? (
-        <section className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+        <section className="space-y-3 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl">
           <h2 className="text-sm font-medium text-foreground">Nova graduação</h2>
           <NewGraduationForm members={memberOptions} />
         </section>
@@ -73,14 +73,14 @@ export default async function GraduationsPage() {
           graduations.map((g) => (
             <article
               key={g.id}
-              className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl"
+              className="rounded-2xl border border-border bg-card p-4 backdrop-blur-xl"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-foreground">
                     {g.member_name}
                   </p>
-                  <p className="mt-1 text-sm text-[var(--accent)]">
+                  <p className="mt-1 text-sm text-[var(--action-red)]">
                     {g.belt} · grau {g.degree}
                   </p>
                 </div>
