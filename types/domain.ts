@@ -24,4 +24,6 @@ export type Capability =
   | "self_checkin"
   | "graduate"
   | "manage_announcements"
-  | "view_announcements";
+  | "view_announcements"
+  | "manage_virtual_lessons"
+  | "view_virtual_lessons";

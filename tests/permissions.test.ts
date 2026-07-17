@@ -18,6 +18,18 @@ describe("can", () => {
   it("allows owner manage_academy", () => {
     expect(can("owner", "manage_academy")).toBe(true);
   });
+  it("allows instructor manage_virtual_lessons", () => {
+    expect(can("instructor", "manage_virtual_lessons")).toBe(true);
+  });
+  it("denies student manage_virtual_lessons", () => {
+    expect(can("student", "manage_virtual_lessons")).toBe(false);
+  });
+  it("allows student view_virtual_lessons", () => {
+    expect(can("student", "view_virtual_lessons")).toBe(true);
+  });
+  it("denies assistant_instructor manage_virtual_lessons", () => {
+    expect(can("assistant_instructor", "manage_virtual_lessons")).toBe(false);
+  });
 });
 
 describe("assertCan", () => {
