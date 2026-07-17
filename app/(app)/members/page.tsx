@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { listMembers } from "@/actions/members";
+import { PageHeader } from "@/components/layout/page-header";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
 import { BELT_OPTIONS } from "@/lib/validations/members";
@@ -54,26 +55,20 @@ export default async function MembersPage({
 
   return (
     <div className="space-y-6">
-      <header className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
-            Membros
-          </h1>
-          <p className="text-sm text-[var(--bjj-muted)]">
-            Alunos e equipe da academia
-          </p>
-        </div>
-        {canManage ? (
-          <div className="flex shrink-0 gap-2">
+      <PageHeader
+        title="Membros"
+        description="Alunos e equipe da academia"
+        action={
+          canManage ? (
             <Link
               href="/members/new"
               className="inline-flex h-10 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               Vincular
             </Link>
-          </div>
-        ) : null}
-      </header>
+          ) : undefined
+        }
+      />
 
       {canManage ? <CreateInviteForm /> : null}
 

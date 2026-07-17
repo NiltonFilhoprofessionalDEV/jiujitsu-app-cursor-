@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { listAnnouncements } from "@/actions/announcements";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
-import { EmptyState } from "@/components/ui/empty-state";
 import { NewAnnouncementForm } from "./new-announcement-form";
 
 function formatDateTime(iso: string): string {
@@ -39,14 +40,7 @@ export default async function AnnouncementsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
-          Avisos
-        </h1>
-        <p className="text-sm text-[var(--bjj-muted)]">
-          Comunicados da academia
-        </p>
-      </header>
+      <PageHeader title="Avisos" description="Recados do tatame para a equipe" />
 
       {canManage ? (
         <section className="space-y-3 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl">
@@ -58,8 +52,8 @@ export default async function AnnouncementsPage() {
       <section className="space-y-2">
         {announcements.length === 0 ? (
           <EmptyState
-            title="Nenhum aviso publicado"
-            description="Comunicados da academia aparecem aqui para toda a equipe."
+            title="Quadro de avisos vazio"
+            description="Quando houver comunicado da academia, ele aparece aqui para todo mundo."
           />
         ) : (
           announcements.map((a) => (

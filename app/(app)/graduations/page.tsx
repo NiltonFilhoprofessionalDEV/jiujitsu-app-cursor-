@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import { listGraduations } from "@/actions/graduations";
 import { listMembers } from "@/actions/members";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
-import { EmptyState } from "@/components/ui/empty-state";
 import { NewGraduationForm } from "./new-graduation-form";
 
 function formatDate(value: string): string {
@@ -46,14 +47,10 @@ export default async function GraduationsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
-          Graduações
-        </h1>
-        <p className="text-sm text-[var(--bjj-muted)]">
-          Histórico append-only — faixas nunca são apagadas
-        </p>
-      </header>
+      <PageHeader
+        title="Graduações"
+        description="Histórico permanente — faixas nunca somem"
+      />
 
       {canGraduate ? (
         <section className="space-y-3 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl">
@@ -66,8 +63,8 @@ export default async function GraduationsPage() {
         <h2 className="text-sm font-medium text-foreground">Histórico</h2>
         {graduations.length === 0 ? (
           <EmptyState
-            title="Nenhuma graduação registrada"
-            description="O histórico é append-only: cada promoção fica permanente."
+            title="Nenhuma faixa no mural"
+            description="Cada promoção fica permanente. Registre a primeira quando o aluno subir de grau."
           />
         ) : (
           graduations.map((g) => (

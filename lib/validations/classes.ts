@@ -93,6 +93,31 @@ export const updateScheduleSchema = z
     path: ["end_time"],
   });
 
+export const updateScheduleAutoOpenSchema = z.object({
+  id: z.string().uuid("Horário inválido"),
+  class_id: z.string().uuid("Turma inválida"),
+  auto_open_enabled: booleanFromForm.transform((value) => value ?? false),
+  auto_open_lead_minutes: z.coerce
+    .number()
+    .int()
+    .min(5, "Mínimo 5 minutos")
+    .max(120, "Máximo 120 minutos")
+    .default(30),
+  auto_close_grace_minutes: z.coerce
+    .number()
+    .int()
+    .min(0, "Mínimo 0 minutos")
+    .max(60, "Máximo 60 minutos")
+    .default(15),
+});
+
+export const updateClassDefaultInstructorSchema = z.object({
+  class_id: z.string().uuid("Turma inválida"),
+  default_instructor_id: z
+    .union([z.string().uuid(), z.literal(""), z.null()])
+    .transform((value) => (value === "" || value === null ? null : value)),
+});
+
 export const deleteScheduleSchema = z.object({
   id: z.string().uuid("Horário inválido"),
   class_id: z.string().uuid("Turma inválida"),
@@ -102,3 +127,9 @@ export type CreateClassInput = z.infer<typeof createClassSchema>;
 export type UpdateClassInput = z.infer<typeof updateClassSchema>;
 export type CreateScheduleInput = z.infer<typeof createScheduleSchema>;
 export type UpdateScheduleInput = z.infer<typeof updateScheduleSchema>;
+export type UpdateScheduleAutoOpenInput = z.infer<
+  typeof updateScheduleAutoOpenSchema
+>;
+export type UpdateClassDefaultInstructorInput = z.infer<
+  typeof updateClassDefaultInstructorSchema
+>;

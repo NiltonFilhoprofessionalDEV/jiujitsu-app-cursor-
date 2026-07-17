@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { listClasses } from "@/actions/classes";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
-import { EmptyState } from "@/components/ui/empty-state";
 import { WEEKDAY_LABELS, formatTime } from "./labels";
 
 export default async function ClassesPage() {
@@ -25,30 +26,26 @@ export default async function ClassesPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
-            Turmas
-          </h1>
-          <p className="text-sm text-[var(--bjj-muted)]">
-            Grades semanais e aulas da academia
-          </p>
-        </div>
-        {canManage ? (
-          <Link
-            href="/classes/new"
-            className="inline-flex h-10 shrink-0 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            Nova
-          </Link>
-        ) : null}
-      </header>
+      <PageHeader
+        title="Turmas"
+        description="Grades semanais e aulas no tatame"
+        action={
+          canManage ? (
+            <Link
+              href="/classes/new"
+              className="inline-flex h-10 shrink-0 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Nova
+            </Link>
+          ) : undefined
+        }
+      />
 
       <div className="space-y-2">
         {classes.length === 0 ? (
           <EmptyState
-            title="Nenhuma turma cadastrada"
-            description="Crie turmas com horários semanais para abrir aulas e registrar presença."
+            title="Nenhuma turma no horário"
+            description="Monte a primeira turma com dias e horários para abrir aulas e bater presença."
             actionHref={canManage ? "/classes/new" : undefined}
             actionLabel={canManage ? "Criar turma" : undefined}
           />
@@ -59,7 +56,7 @@ export default async function ClassesPage() {
               <Link
                 key={klass.id}
                 href={`/classes/${klass.id}`}
-                className="block rounded-2xl border border-border bg-card p-4 transition hover:bg-muted backdrop-blur-xl"
+                className="block rounded-2xl border border-border bg-card p-4 shadow-[var(--surface-shadow)] backdrop-blur-xl transition hover:bg-muted"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

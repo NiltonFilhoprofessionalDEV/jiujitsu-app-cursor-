@@ -1,15 +1,18 @@
 import { redirect } from "next/navigation";
-import { logout } from "@/actions/auth";
 import { ROLE_LABELS } from "@/app/(app)/members/labels";
+import { PageHeader } from "@/components/layout/page-header";
+import { ChangePasswordForm } from "@/components/profile/change-password-form";
+import { ProfileAvatarUpload } from "@/components/profile/profile-avatar-upload";
+import { getActiveAcademyBrief } from "@/lib/academy/active";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { createClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function ProfilePage() {
   let membership;
+  let academy;
   try {
     membership = await getActiveMembership();
+    academy = await getActiveAcademyBrief();
   } catch {
     redirect("/select-academy");
   }
@@ -25,28 +28,33 @@ export default async function ProfilePage() {
     .eq("id", membership.profile_id)
     .maybeSingle();
 
+  const displayName = profile?.name ?? "Usuário";
+  const initial = (displayName || user?.email || "?").slice(0, 1).toUpperCase();
+
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
-          Perfil
-        </h1>
-        <p className="text-sm text-[var(--bjj-muted)]">
-          Sua conta no BJJ Manager
-        </p>
-      </header>
+      <PageHeader
+        eyebrow={academy.name}
+        title="Perfil"
+        description="Seus dados na academia"
+      />
 
-      <section className="space-y-4 rounded-2xl border border-border bg-card p-5 backdrop-blur-xl">
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-[var(--surface-shadow)] backdrop-blur-xl">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--action-red)]/20 font-display text-xl text-[var(--action-red)]">
-            {(profile?.name ?? user?.email ?? "?").slice(0, 1).toUpperCase()}
-          </div>
+          <ProfileAvatarUpload
+            name={displayName}
+            avatarUrl={profile?.avatar_url ?? null}
+            initial={initial}
+          />
           <div className="min-w-0">
             <p className="truncate text-lg font-semibold text-foreground">
-              {profile?.name ?? "Usuário"}
+              {displayName}
             </p>
             <p className="truncate text-sm text-muted-foreground">
               {profile?.email ?? user?.email}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Toque na foto para alterar
             </p>
           </div>
         </div>
@@ -58,6 +66,12 @@ export default async function ProfilePage() {
               {ROLE_LABELS[membership.role]}
             </dd>
           </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted-foreground">Academia</dt>
+            <dd className="truncate font-medium text-foreground">
+              {academy.name}
+            </dd>
+          </div>
           {profile?.phone ? (
             <div className="flex justify-between gap-3">
               <dt className="text-muted-foreground">Telefone</dt>
@@ -67,17 +81,7 @@ export default async function ProfilePage() {
         </dl>
       </section>
 
-      <ThemeToggle />
-
-      <form action={logout}>
-        <Button
-          type="submit"
-          variant="outline"
-          className="h-11 w-full border-border"
-        >
-          Sair
-        </Button>
-      </form>
+      <ChangePasswordForm />
     </div>
   );
 }

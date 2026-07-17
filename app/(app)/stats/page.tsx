@@ -1,13 +1,17 @@
 import { redirect } from "next/navigation";
 import { getStatsCharts } from "@/actions/dashboard";
 import { StatsCharts } from "@/components/dashboard/stats-charts";
+import { PageHeader } from "@/components/layout/page-header";
+import { getActiveAcademyBrief } from "@/lib/academy/active";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
 
 export default async function StatsPage() {
   let membership;
+  let academy;
   try {
     membership = await getActiveMembership();
+    academy = await getActiveAcademyBrief();
   } catch {
     redirect("/select-academy");
   }
@@ -15,17 +19,17 @@ export default async function StatsPage() {
   if (!can(membership.role, "view_dashboard")) {
     return (
       <div className="space-y-6">
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
-            Estatísticas
-          </h1>
-          <p className="text-sm text-[var(--bjj-muted)]">
-            Relatórios da academia
+        <PageHeader
+          eyebrow={academy.name}
+          title="Estatísticas"
+          description="Leitura do tatame"
+        />
+        <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-[var(--surface-shadow)] backdrop-blur-xl">
+          <p className="font-display text-lg tracking-[0.08em] text-foreground">
+            Relatórios da equipe
           </p>
-        </header>
-        <div className="rounded-2xl border border-border bg-card p-8 text-center backdrop-blur-xl">
-          <p className="text-sm text-muted-foreground">
-            Os gráficos de gestão estão disponíveis para instrutores e
+          <p className="mt-2 text-sm text-muted-foreground">
+            Gráficos de gestão ficam disponíveis para instrutores e
             administradores.
           </p>
         </div>
@@ -42,14 +46,11 @@ export default async function StatsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
-          Estatísticas
-        </h1>
-        <p className="text-sm text-[var(--bjj-muted)]">
-          Faixas, presença, crescimento e graduações
-        </p>
-      </header>
+      <PageHeader
+        eyebrow={academy.name}
+        title="Estatísticas"
+        description="Faixas, presença e ritmo da academia"
+      />
       <StatsCharts {...charts} />
     </div>
   );

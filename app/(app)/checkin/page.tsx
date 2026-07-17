@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { listOpenSessions } from "@/actions/sessions";
+import { PageHeader } from "@/components/layout/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
 import { RequestCheckinButton } from "./request-checkin-button";
@@ -24,32 +26,28 @@ export default async function CheckinPage() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
-          Check-in
-        </h1>
-        <p className="text-sm text-[var(--bjj-muted)]">
-          Aulas abertas na academia ativa
-        </p>
-      </header>
+      <PageHeader
+        title="Check-in"
+        description="Aulas abertas agora no tatame"
+      />
 
       <div className="space-y-3">
         {sessions.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card p-6 text-center backdrop-blur-xl">
-            <p className="text-sm text-muted-foreground">
-              Nenhuma aula aberta no momento.
-            </p>
-            {canOpen ? (
-              <p className="mt-2 text-xs text-muted-foreground">
-                Abra uma aula a partir de uma turma.
-              </p>
-            ) : null}
-          </div>
+          <EmptyState
+            title="Nenhuma aula aberta"
+            description={
+              canOpen
+                ? "Abra uma aula pela turma para os alunos baterem presença."
+                : "Quando o professor abrir a aula, ela aparece aqui para o check-in."
+            }
+            actionHref={canOpen ? "/classes" : undefined}
+            actionLabel={canOpen ? "Ver turmas" : undefined}
+          />
         ) : (
           sessions.map((session) => (
             <div
               key={session.id}
-              className="space-y-3 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl"
+              className="space-y-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--surface-shadow)] backdrop-blur-xl"
             >
               <div>
                 <p className="font-semibold text-foreground">

@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { selectClassName } from "@/app/(app)/classes/labels";
+import { BRAZIL_TIMEZONES } from "@/lib/sessions/auto-open";
 
 const initialState: AcademyActionState = null;
 
@@ -62,6 +64,22 @@ function CreateUnitForm({ canEdit }: { canEdit: boolean }) {
       <div className="space-y-2">
         <Label htmlFor="unit-phone">Telefone</Label>
         <Input id="unit-phone" name="phone" type="tel" className="h-11" />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="unit-timezone">Fuso horário</Label>
+        <select
+          id="unit-timezone"
+          name="timezone"
+          defaultValue=""
+          className={selectClassName}
+        >
+          <option value="">Usar fuso da academia</option>
+          {BRAZIL_TIMEZONES.map((tz) => (
+            <option key={tz.value} value={tz.value}>
+              {tz.label}
+            </option>
+          ))}
+        </select>
       </div>
       <Button
         type="submit"
@@ -163,6 +181,24 @@ function UnitCard({
           disabled={!canEdit}
           className="h-11"
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor={`timezone-${unit.id}`}>Fuso horário</Label>
+        <select
+          id={`timezone-${unit.id}`}
+          name="timezone"
+          defaultValue={unit.timezone ?? ""}
+          disabled={!canEdit}
+          className={selectClassName}
+        >
+          <option value="">Usar fuso da academia</option>
+          {BRAZIL_TIMEZONES.map((tz) => (
+            <option key={tz.value} value={tz.value}>
+              {tz.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {canEdit ? (

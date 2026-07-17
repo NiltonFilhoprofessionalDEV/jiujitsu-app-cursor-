@@ -39,6 +39,7 @@ export type AcademyUnit = {
   state: string | null;
   phone: string | null;
   is_active: boolean;
+  timezone: string | null;
 };
 
 export type AcademyDetails = {
@@ -51,6 +52,7 @@ export type AcademyDetails = {
   state: string | null;
   address: string | null;
   description: string | null;
+  timezone: string;
 };
 
 function firstValidationError(error: {
@@ -222,7 +224,7 @@ export async function getActiveAcademy(): Promise<AcademyDetails | null> {
   const { data, error } = await supabase
     .from("academies")
     .select(
-      "id, name, phone, email, instagram, city, state, address, description",
+      "id, name, phone, email, instagram, city, state, address, description, timezone",
     )
     .eq("id", member.academy_id)
     .maybeSingle();
@@ -231,7 +233,14 @@ export async function getActiveAcademy(): Promise<AcademyDetails | null> {
     throw error;
   }
 
-  return data as AcademyDetails | null;
+  if (!data) return null;
+
+  return {
+    ...(data as AcademyDetails),
+    timezone:
+      ((data as { timezone?: string | null }).timezone as string | undefined) ??
+      "America/Sao_Paulo",
+  };
 }
 
 export async function updateAcademy(
@@ -250,6 +259,7 @@ export async function updateAcademy(
       state: formOptional(formData, "state"),
       address: formOptional(formData, "address"),
       description: formOptional(formData, "description"),
+      timezone: formOptional(formData, "timezone"),
     });
 
     if (!parsed.success) {
@@ -268,6 +278,7 @@ export async function updateAcademy(
         state: parsed.data.state ?? null,
         address: parsed.data.address ?? null,
         description: parsed.data.description ?? null,
+        timezone: parsed.data.timezone ?? "America/Sao_Paulo",
         updated_at: new Date().toISOString(),
       })
       .eq("id", member.academy_id);
@@ -297,7 +308,7 @@ export async function listUnits(): Promise<AcademyUnit[]> {
 
   const { data, error } = await supabase
     .from("academy_units")
-    .select("id, academy_id, name, address, city, state, phone, is_active")
+    .select("id, academy_id, name, address, city, state, phone, is_active, timezone")
     .eq("academy_id", member.academy_id)
     .order("name");
 
@@ -321,6 +332,7 @@ export async function createUnit(
       city: formOptional(formData, "city"),
       state: formOptional(formData, "state"),
       phone: formOptional(formData, "phone"),
+      timezone: formOptional(formData, "timezone"),
     });
 
     if (!parsed.success) {
@@ -335,6 +347,7 @@ export async function createUnit(
       city: parsed.data.city ?? null,
       state: parsed.data.state ?? null,
       phone: parsed.data.phone ?? null,
+      timezone: parsed.data.timezone ?? null,
     });
 
     if (error) {
@@ -370,6 +383,7 @@ export async function updateUnit(
       city: formOptional(formData, "city"),
       state: formOptional(formData, "state"),
       phone: formOptional(formData, "phone"),
+      timezone: formOptional(formData, "timezone"),
       is_active: formData.get("is_active") ?? undefined,
     });
 
@@ -384,6 +398,7 @@ export async function updateUnit(
       city: parsed.data.city ?? null,
       state: parsed.data.state ?? null,
       phone: parsed.data.phone ?? null,
+      timezone: parsed.data.timezone ?? null,
       updated_at: new Date().toISOString(),
     };
 

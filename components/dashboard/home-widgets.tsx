@@ -26,7 +26,7 @@ export function MetricGlassCard({
   ];
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-[0_0_40px_rgba(225,6,0,0.12)] backdrop-blur-xl">
+    <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-[var(--surface-shadow)] backdrop-blur-xl">
       <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-[var(--action-red)]/25 blur-3xl" />
       <p className="font-display text-sm tracking-[0.2em] text-muted-foreground">
         Visão geral
@@ -78,7 +78,7 @@ export function QuickActions() {
         <Link
           key={action.href}
           href={action.href}
-          className={`rounded-xl px-3 py-3 text-center ${action.tone}`}
+          className={`rounded-xl px-3 py-3 text-center transition duration-200 hover:-translate-y-0.5 active:scale-[0.98] ${action.tone}`}
         >
           <p className="font-display text-sm tracking-wide">{action.label}</p>
           <p className="mt-1 text-[10px] opacity-70">{action.hint}</p>
@@ -103,7 +103,7 @@ export function RecentList({
         {title}
       </h2>
       {items.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card p-4 text-center text-sm text-muted-foreground backdrop-blur-xl">
+        <div className="rounded-xl border border-border bg-card p-4 text-center text-sm text-muted-foreground shadow-[var(--surface-shadow)] backdrop-blur-xl">
           {empty}
         </div>
       ) : (

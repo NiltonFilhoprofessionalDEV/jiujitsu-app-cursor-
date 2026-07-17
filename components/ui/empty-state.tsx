@@ -17,11 +17,13 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-dashed border-border bg-gradient-to-b from-white/[0.07] to-transparent p-8 text-center backdrop-blur-xl",
+        "page-enter rounded-2xl border border-dashed border-border bg-card p-8 text-center shadow-[var(--surface-shadow)] backdrop-blur-xl",
         className,
       )}
     >
-      <p className="text-sm font-medium text-foreground">{title}</p>
+      <p className="font-display text-lg tracking-[0.08em] text-foreground">
+        {title}
+      </p>
       {description ? (
         <p className="mt-2 text-sm text-muted-foreground">{description}</p>
       ) : null}

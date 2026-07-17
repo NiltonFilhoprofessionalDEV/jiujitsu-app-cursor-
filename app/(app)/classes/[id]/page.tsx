@@ -4,9 +4,13 @@ import {
   listAcademyStudentsForRoster,
   listClassMembers,
 } from "@/actions/class-members";
-import { getClass } from "@/actions/classes";
+import {
+  getClass,
+  listAutoOpenInstructors,
+} from "@/actions/classes";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
+import { ClassAutoInstructorForm } from "../class-auto-instructor-form";
 import { ClassSchedulesManager } from "../class-schedules-manager";
 import { OpenSessionButton } from "../open-session-button";
 import { ClassRoster } from "./class-roster";
@@ -39,7 +43,14 @@ export default async function ClassDetailPage({
   }
 
   const canManage = can(membership.role, "manage_classes");
+  const canConfigureAuto =
+    can(membership.role, "manage_classes") ||
+    can(membership.role, "open_session");
   const canOpen = can(membership.role, "open_session") && klass.is_active;
+
+  const instructors = canConfigureAuto
+    ? await listAutoOpenInstructors()
+    : [];
 
   const rosterData = canManage
     ? await Promise.all([
@@ -59,7 +70,7 @@ export default async function ClassDetailPage({
         </Link>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
+            <h1 className="font-display text-3xl tracking-[0.06em] text-[var(--bjj-text)]">
               {klass.name}
             </h1>
             {klass.description ? (
@@ -104,6 +115,15 @@ export default async function ClassDetailPage({
 
       {canOpen ? <OpenSessionButton classId={klass.id} /> : null}
 
+      {canConfigureAuto ? (
+        <ClassAutoInstructorForm
+          classId={klass.id}
+          defaultInstructorId={klass.default_instructor_id}
+          instructors={instructors}
+          canConfigure={canConfigureAuto}
+        />
+      ) : null}
+
       <section className="space-y-3 rounded-2xl border border-border bg-card p-4 backdrop-blur-xl">
         <h2 className="text-sm font-semibold text-foreground">
           Horários semanais
@@ -112,6 +132,8 @@ export default async function ClassDetailPage({
           classId={klass.id}
           schedules={klass.schedules ?? []}
           canManage={canManage}
+          canConfigureAuto={canConfigureAuto}
+          hasDefaultInstructor={Boolean(klass.default_instructor_id)}
         />
       </section>
 

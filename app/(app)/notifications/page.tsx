@@ -3,8 +3,9 @@ import {
   listNotifications,
   markAllNotificationsRead,
 } from "@/actions/notifications";
-import { getActiveMembership } from "@/lib/permissions/assert";
+import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import { getActiveMembership } from "@/lib/permissions/assert";
 import { MarkReadButton } from "./mark-read-button";
 
 function formatDateTime(iso: string): string {
@@ -36,34 +37,32 @@ export default async function NotificationsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
-            Notificações
-          </h1>
-          <p className="text-sm text-[var(--bjj-muted)]">
-            {unread > 0
-              ? `${unread} não lida${unread > 1 ? "s" : ""}`
-              : "Todas lidas"}
-          </p>
-        </div>
-        {unread > 0 ? (
-          <form action={markAllNotificationsRead}>
-            <button
-              type="submit"
-              className="text-xs font-medium text-[var(--action-red)]"
-            >
-              Marcar todas
-            </button>
-          </form>
-        ) : null}
-      </header>
+      <PageHeader
+        title="Notificações"
+        description={
+          unread > 0
+            ? `${unread} não lida${unread > 1 ? "s" : ""}`
+            : "Todas lidas"
+        }
+        action={
+          unread > 0 ? (
+            <form action={markAllNotificationsRead}>
+              <button
+                type="submit"
+                className="text-xs font-medium text-[var(--action-red)]"
+              >
+                Marcar todas
+              </button>
+            </form>
+          ) : undefined
+        }
+      />
 
       <section className="space-y-2">
         {notifications.length === 0 ? (
           <EmptyState
-            title="Caixa vazia"
-            description="Quando houver graduações, presenças ou avisos, eles aparecem aqui."
+            title="Nada novo por enquanto"
+            description="Graduações, presenças e avisos do tatame aparecem aqui."
           />
         ) : (
           notifications.map((n) => (

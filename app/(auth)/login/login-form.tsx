@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { login, type AuthActionState } from "@/actions/auth";
+import { InstallAppButton } from "@/components/pwa/install-app-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const initialState: AuthActionState = null;
 
@@ -13,8 +15,8 @@ export function LoginForm({ next }: { next?: string }) {
   const [state, formAction, pending] = useActionState(login, initialState);
 
   return (
-    <>
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-xl backdrop-blur-xl">
+    <div className="auth-rise auth-rise-delay-2 space-y-5">
+      <div className="auth-panel rounded-2xl p-6">
         <form action={formAction} className="space-y-4">
           {next ? <input type="hidden" name="next" value={next} /> : null}
           <div className="space-y-2">
@@ -31,10 +33,9 @@ export function LoginForm({ next }: { next?: string }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>
-            <Input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
               autoComplete="current-password"
               required
               minLength={6}
@@ -53,12 +54,15 @@ export function LoginForm({ next }: { next?: string }) {
           <Button
             type="submit"
             disabled={pending}
-            className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            className="h-12 w-full bg-primary text-base font-semibold tracking-wide text-primary-foreground shadow-[0_0_24px_var(--fab-glow)] transition hover:bg-primary/90 hover:shadow-[0_0_32px_var(--fab-glow)]"
           >
             {pending ? "Entrando…" : "Entrar"}
           </Button>
         </form>
       </div>
+
+      <InstallAppButton />
+
       <p className="text-center text-sm text-muted-foreground">
         Não tem conta?{" "}
         <Link
@@ -70,6 +74,6 @@ export function LoginForm({ next }: { next?: string }) {
           Criar conta
         </Link>
       </p>
-    </>
+    </div>
   );
 }

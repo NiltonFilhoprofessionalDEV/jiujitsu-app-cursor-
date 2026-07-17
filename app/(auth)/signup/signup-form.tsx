@@ -13,8 +13,8 @@ export function SignupForm({ next }: { next?: string }) {
   const [state, formAction, pending] = useActionState(signup, initialState);
 
   return (
-    <>
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-xl backdrop-blur-xl">
+    <div className="auth-rise auth-rise-delay-2 space-y-5">
+      <div className="auth-panel rounded-2xl p-6">
         <form action={formAction} className="space-y-4">
           {next ? <input type="hidden" name="next" value={next} /> : null}
           <div className="space-y-2">
@@ -66,7 +66,7 @@ export function SignupForm({ next }: { next?: string }) {
           <Button
             type="submit"
             disabled={pending}
-            className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            className="h-12 w-full bg-primary text-base font-semibold tracking-wide text-primary-foreground shadow-[0_0_24px_var(--fab-glow)] transition hover:bg-primary/90 hover:shadow-[0_0_32px_var(--fab-glow)]"
           >
             {pending ? "Criando…" : "Criar conta"}
           </Button>
@@ -81,6 +81,6 @@ export function SignupForm({ next }: { next?: string }) {
           Entrar
         </Link>
       </p>
-    </>
+    </div>
   );
 }

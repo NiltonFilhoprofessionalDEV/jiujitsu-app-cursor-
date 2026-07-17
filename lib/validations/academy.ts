@@ -14,6 +14,7 @@ export const createAcademySchema = z.object({
   state: optionalString,
   address: optionalString,
   description: optionalString,
+  timezone: optionalString,
 });
 
 export const updateAcademySchema = createAcademySchema;
@@ -24,6 +25,7 @@ export const createUnitSchema = z.object({
   city: optionalString,
   state: optionalString,
   phone: optionalString,
+  timezone: optionalString,
 });
 
 export const updateUnitSchema = createUnitSchema.extend({

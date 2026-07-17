@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { getVirtualLesson } from "@/actions/classroom";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
@@ -26,6 +28,14 @@ export default async function ClassroomLessonPage({
 
   return (
     <div className="space-y-6">
+      <Link
+        href="/classroom"
+        className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Voltar para Sala virtual
+      </Link>
+
       <YoutubePlayer
         videoId={lesson.youtube_video_id}
         orientation={lesson.orientation}

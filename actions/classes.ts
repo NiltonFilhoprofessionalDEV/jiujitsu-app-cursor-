@@ -7,12 +7,15 @@ import {
   getActiveMembership,
   PermissionError,
 } from "@/lib/permissions/assert";
+import { can } from "@/lib/permissions/capabilities";
 import { createClient } from "@/lib/supabase/server";
 import {
   createClassSchema,
   createScheduleSchema,
   deleteScheduleSchema,
+  updateClassDefaultInstructorSchema,
   updateClassSchema,
+  updateScheduleAutoOpenSchema,
   updateScheduleSchema,
 } from "@/lib/validations/classes";
 
@@ -27,6 +30,9 @@ export type ClassScheduleRow = {
   weekday: number;
   start_time: string;
   end_time: string;
+  auto_open_enabled: boolean;
+  auto_open_lead_minutes: number;
+  auto_close_grace_minutes: number;
 };
 
 export type ClassRow = {
@@ -40,8 +46,42 @@ export type ClassRow = {
   minimum_belt: string | null;
   maximum_belt: string | null;
   is_active: boolean;
+  default_instructor_id: string | null;
   schedules?: ClassScheduleRow[];
 };
+
+export type AutoOpenInstructorOption = {
+  id: string;
+  name: string;
+  role: string;
+};
+
+const SCHEDULE_SELECT =
+  "id, class_id, weekday, start_time, end_time, auto_open_enabled, auto_open_lead_minutes, auto_close_grace_minutes";
+
+function mapSchedule(row: ClassScheduleRow): ClassScheduleRow {
+  return {
+    id: row.id,
+    class_id: row.class_id,
+    weekday: row.weekday,
+    start_time: row.start_time,
+    end_time: row.end_time,
+    auto_open_enabled: Boolean(row.auto_open_enabled),
+    auto_open_lead_minutes: Number(row.auto_open_lead_minutes ?? 30),
+    auto_close_grace_minutes: Number(row.auto_close_grace_minutes ?? 15),
+  };
+}
+
+async function assertCanConfigureAutoOpen() {
+  const member = await getActiveMembership();
+  if (
+    !can(member.role, "manage_classes") &&
+    !can(member.role, "open_session")
+  ) {
+    throw new PermissionError(member.role, "manage_classes");
+  }
+  return member;
+}
 
 function firstValidationError(error: {
   flatten: () => {
@@ -81,7 +121,8 @@ export async function listClasses(): Promise<ClassRow[]> {
       minimum_belt,
       maximum_belt,
       is_active,
-      class_schedules(id, class_id, weekday, start_time, end_time)
+      default_instructor_id,
+      class_schedules(${SCHEDULE_SELECT})
     `,
     )
     .eq("academy_id", member.academy_id)
@@ -93,7 +134,7 @@ export async function listClasses(): Promise<ClassRow[]> {
 
   return (data ?? []).map((row) => {
     const schedules = Array.isArray(row.class_schedules)
-      ? (row.class_schedules as ClassScheduleRow[])
+      ? (row.class_schedules as ClassScheduleRow[]).map(mapSchedule)
       : [];
     return {
       id: row.id as string,
@@ -106,6 +147,8 @@ export async function listClasses(): Promise<ClassRow[]> {
       minimum_belt: (row.minimum_belt as string | null) ?? null,
       maximum_belt: (row.maximum_belt as string | null) ?? null,
       is_active: Boolean(row.is_active),
+      default_instructor_id:
+        (row.default_instructor_id as string | null) ?? null,
       schedules: schedules.sort(
         (a, b) =>
           a.weekday - b.weekday || a.start_time.localeCompare(b.start_time),
@@ -132,7 +175,8 @@ export async function getClass(classId: string): Promise<ClassRow | null> {
       minimum_belt,
       maximum_belt,
       is_active,
-      class_schedules(id, class_id, weekday, start_time, end_time)
+      default_instructor_id,
+      class_schedules(${SCHEDULE_SELECT})
     `,
     )
     .eq("id", classId)
@@ -145,7 +189,7 @@ export async function getClass(classId: string): Promise<ClassRow | null> {
   if (!data) return null;
 
   const schedules = Array.isArray(data.class_schedules)
-    ? (data.class_schedules as ClassScheduleRow[])
+    ? (data.class_schedules as ClassScheduleRow[]).map(mapSchedule)
     : [];
 
   return {
@@ -159,6 +203,8 @@ export async function getClass(classId: string): Promise<ClassRow | null> {
     minimum_belt: (data.minimum_belt as string | null) ?? null,
     maximum_belt: (data.maximum_belt as string | null) ?? null,
     is_active: Boolean(data.is_active),
+    default_instructor_id:
+      (data.default_instructor_id as string | null) ?? null,
     schedules: schedules.sort(
       (a, b) =>
         a.weekday - b.weekday || a.start_time.localeCompare(b.start_time),
@@ -461,6 +507,186 @@ export async function deleteSchedule(
         err instanceof Error
           ? err.message
           : "Não foi possível remover o horário.",
+    };
+  }
+}
+
+export async function listAutoOpenInstructors(): Promise<
+  AutoOpenInstructorOption[]
+> {
+  const member = await getActiveMembership();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("academy_members")
+    .select("id, role, profiles(name)")
+    .eq("academy_id", member.academy_id)
+    .eq("status", "active")
+    .in("role", [
+      "owner",
+      "administrator",
+      "instructor",
+      "assistant_instructor",
+    ])
+    .order("role");
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => {
+    const profile = Array.isArray(row.profiles)
+      ? row.profiles[0]
+      : row.profiles;
+    return {
+      id: row.id as string,
+      name: (profile as { name?: string } | null)?.name ?? "Sem nome",
+      role: row.role as string,
+    };
+  });
+}
+
+export async function updateClassDefaultInstructor(
+  _prevState: ClassActionState,
+  formData: FormData,
+): Promise<ClassActionState> {
+  try {
+    const actor = await assertCanConfigureAutoOpen();
+
+    const parsed = updateClassDefaultInstructorSchema.safeParse({
+      class_id: formData.get("class_id"),
+      default_instructor_id: formData.get("default_instructor_id"),
+    });
+
+    if (!parsed.success) {
+      return { error: firstValidationError(parsed.error) };
+    }
+
+    const supabase = await createClient();
+    const { data: klass, error: classError } = await supabase
+      .from("classes")
+      .select("id")
+      .eq("id", parsed.data.class_id)
+      .eq("academy_id", actor.academy_id)
+      .maybeSingle();
+
+    if (classError) return { error: classError.message };
+    if (!klass) return { error: "Turma não encontrada." };
+
+    if (parsed.data.default_instructor_id) {
+      const { data: instructor, error: instructorError } = await supabase
+        .from("academy_members")
+        .select("id, role, status")
+        .eq("id", parsed.data.default_instructor_id)
+        .eq("academy_id", actor.academy_id)
+        .maybeSingle();
+
+      if (instructorError) return { error: instructorError.message };
+      if (
+        !instructor ||
+        instructor.status !== "active" ||
+        ![
+          "owner",
+          "administrator",
+          "instructor",
+          "assistant_instructor",
+        ].includes(instructor.role as string)
+      ) {
+        return { error: "Professor inválido para abertura automática." };
+      }
+    }
+
+    const { error } = await supabase
+      .from("classes")
+      .update({
+        default_instructor_id: parsed.data.default_instructor_id,
+      })
+      .eq("id", parsed.data.class_id)
+      .eq("academy_id", actor.academy_id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath(`/classes/${parsed.data.class_id}`);
+    return { success: "Professor da abertura automática salvo." };
+  } catch (err) {
+    if (err instanceof PermissionError) {
+      return { error: "Sem permissão para configurar abertura automática." };
+    }
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "Não foi possível salvar o professor.",
+    };
+  }
+}
+
+export async function updateScheduleAutoOpen(
+  _prevState: ClassActionState,
+  formData: FormData,
+): Promise<ClassActionState> {
+  try {
+    const actor = await assertCanConfigureAutoOpen();
+
+    const enabledRaw = formData.get("auto_open_enabled");
+    const parsed = updateScheduleAutoOpenSchema.safeParse({
+      id: formData.get("id"),
+      class_id: formData.get("class_id"),
+      auto_open_enabled: enabledRaw === "on" || enabledRaw === "true",
+      auto_open_lead_minutes: formData.get("auto_open_lead_minutes") || 30,
+      auto_close_grace_minutes: formData.get("auto_close_grace_minutes") || 15,
+    });
+
+    if (!parsed.success) {
+      return { error: firstValidationError(parsed.error) };
+    }
+
+    const supabase = await createClient();
+    const { data: klass, error: classError } = await supabase
+      .from("classes")
+      .select("id, default_instructor_id")
+      .eq("id", parsed.data.class_id)
+      .eq("academy_id", actor.academy_id)
+      .maybeSingle();
+
+    if (classError) return { error: classError.message };
+    if (!klass) return { error: "Turma não encontrada." };
+
+    if (parsed.data.auto_open_enabled && !klass.default_instructor_id) {
+      return {
+        error: "Escolha o professor da abertura automática antes de ativar.",
+      };
+    }
+
+    const { error } = await supabase
+      .from("class_schedules")
+      .update({
+        auto_open_enabled: parsed.data.auto_open_enabled,
+        auto_open_lead_minutes: parsed.data.auto_open_enabled
+          ? parsed.data.auto_open_lead_minutes
+          : 30,
+        auto_close_grace_minutes: parsed.data.auto_open_enabled
+          ? parsed.data.auto_close_grace_minutes
+          : 15,
+      })
+      .eq("id", parsed.data.id)
+      .eq("class_id", parsed.data.class_id);
+
+    if (error) return { error: error.message };
+
+    revalidatePath(`/classes/${parsed.data.class_id}`);
+    return {
+      success: parsed.data.auto_open_enabled
+        ? "Abertura automática ativada."
+        : "Abertura automática desativada.",
+    };
+  } catch (err) {
+    if (err instanceof PermissionError) {
+      return { error: "Sem permissão para configurar abertura automática." };
+    }
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "Não foi possível salvar a abertura automática.",
     };
   }
 }

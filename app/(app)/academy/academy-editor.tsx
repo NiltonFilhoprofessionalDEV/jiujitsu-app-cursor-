@@ -10,6 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BRAZIL_TIMEZONES } from "@/lib/sessions/auto-open";
+import { selectClassName } from "@/app/(app)/classes/labels";
 
 const initialState: AcademyActionState = null;
 
@@ -115,6 +117,26 @@ export function AcademyEditor({
             disabled={!canEdit}
             className="h-11"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="timezone">Fuso horário</Label>
+          <select
+            id="timezone"
+            name="timezone"
+            defaultValue={academy.timezone || "America/Sao_Paulo"}
+            disabled={!canEdit}
+            className={selectClassName}
+          >
+            {BRAZIL_TIMEZONES.map((tz) => (
+              <option key={tz.value} value={tz.value}>
+                {tz.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-[11px] text-muted-foreground">
+            Usado na abertura automática quando a unidade não tem fuso próprio
+          </p>
         </div>
 
         <div className="space-y-2">

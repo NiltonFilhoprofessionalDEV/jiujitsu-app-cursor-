@@ -5,6 +5,7 @@ import {
   type AcademyDetails,
   type AcademyUnit,
 } from "@/actions/academies";
+import { PageHeader } from "@/components/layout/page-header";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { AcademyEditor } from "./academy-editor";
 import { UnitsManager } from "./units-manager";
@@ -37,14 +38,10 @@ export default async function AcademyPage() {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--bjj-text)]">
-          Academia
-        </h1>
-        <p className="text-sm text-[var(--bjj-muted)]">
-          Dados da academia e unidades
-        </p>
-      </header>
+      <PageHeader
+        title="Academia"
+        description="Dados da academia e unidades"
+      />
 
       <AcademyEditor academy={academy} canEdit={canManageAcademy} />
       <UnitsManager units={units} canEdit={canManageUnits} />

@@ -2,7 +2,11 @@
 2. Cole e execute o conteúdo de `0001_init.sql` (fresh install).
 3. Se o banco já aplicou um `0001` antigo, execute também `0002_security_fixes.sql`.
 4. Execute `0003_academy_invites.sql` (convites por link / WhatsApp).
-5. Em Database → Replication, habilite Realtime na tabela `attendance_requests`.
+5. Execute `0004_virtual_classroom.sql` (sala virtual YouTube), se ainda não aplicou.
+6. Execute `0005_avatars_storage.sql` (avatars), se ainda não aplicou.
+7. Execute `0006_auto_open_sessions.sql` (abertura/fechamento automático de aulas).
+8. Em Database → Replication, habilite Realtime na tabela `attendance_requests`.
+9. Em produção (Vercel), defina `CRON_SECRET` e confira o cron em `vercel.json` (`*/2 * * * *` → `/api/cron/auto-sessions`).
 
 ## Notas de segurança (0002)
 
