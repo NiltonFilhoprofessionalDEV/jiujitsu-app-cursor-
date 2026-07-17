@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -21,6 +22,7 @@ export function ClassRoster({
   initialMembers: ClassMemberRow[];
   students: RosterStudentOption[];
 }) {
+  const router = useRouter();
   const [members, setMembers] = useState(initialMembers);
   const [selectedId, setSelectedId] = useState("");
   const [pending, startTransition] = useTransition();
@@ -52,6 +54,7 @@ export function ClassRoster({
       }
       setSelectedId("");
       toast.success("Membro adicionado à turma.");
+      router.refresh();
     });
   }
 
@@ -63,6 +66,7 @@ export function ClassRoster({
         return;
       }
       toast.success("Membro removido.");
+      router.refresh();
     });
   }
 

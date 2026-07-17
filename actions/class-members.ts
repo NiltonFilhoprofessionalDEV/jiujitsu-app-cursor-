@@ -118,6 +118,8 @@ export async function addClassMember(
       .select("id")
       .eq("id", academyMemberId)
       .eq("academy_id", actor.academy_id)
+      .eq("status", "active")
+      .in("role", ["student", "guardian"])
       .maybeSingle();
     if (!target) return { error: "Membro inválido." };
 
