@@ -49,7 +49,7 @@ export const getActiveMembership = cache(
 
     const { data: member, error } = await supabase
       .from("academy_members")
-      .select("id, academy_id, profile_id, role, status")
+      .select("id, academy_id, profile_id, role, status, academies(is_active)")
       .eq("profile_id", user.id)
       .eq("academy_id", academyId)
       .eq("status", "active")
@@ -61,6 +61,15 @@ export const getActiveMembership = cache(
 
     if (!member) {
       throw new Error("Active membership not found");
+    }
+
+    const academy = member.academies as
+      | { is_active: boolean }
+      | { is_active: boolean }[]
+      | null;
+    const academyRow = Array.isArray(academy) ? academy[0] : academy;
+    if (academyRow && academyRow.is_active === false) {
+      throw new Error("Academy suspended");
     }
 
     return {

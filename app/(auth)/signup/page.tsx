@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getInvitePreview } from "@/actions/invites";
+import { getOwnerInvitePreview } from "@/actions/owner-invites";
 import { BlackBeltTitle } from "@/components/brand/black-belt-title";
 import { BrandWordmark } from "@/components/brand/brand-wordmark";
 import { SignupForm } from "./signup-form";
@@ -13,9 +14,14 @@ function isInviteNext(next: string | undefined): next is string {
   );
 }
 
-function inviteTokenFromNext(next: string): string | null {
+function memberInviteTokenFromNext(next: string): string | null {
   if (!next.startsWith("/invite/")) return null;
   return next.slice("/invite/".length).split("/")[0]?.trim() || null;
+}
+
+function ownerInviteTokenFromNext(next: string): string | null {
+  if (!next.startsWith("/owner-invite/")) return null;
+  return next.slice("/owner-invite/".length).split("/")[0]?.trim() || null;
 }
 
 export default async function SignupPage({
@@ -29,12 +35,20 @@ export default async function SignupPage({
   let lockedEmail: string | null = null;
   let suggestedName: string | null = null;
 
-  const token = next ? inviteTokenFromNext(next) : null;
-  if (token) {
-    const preview = await getInvitePreview(token);
+  const memberToken = next ? memberInviteTokenFromNext(next) : null;
+  if (memberToken) {
+    const preview = await getInvitePreview(memberToken);
     if (preview?.isValid) {
       lockedEmail = preview.expectedEmail;
       suggestedName = preview.inviteeName;
+    }
+  }
+
+  const ownerToken = next ? ownerInviteTokenFromNext(next) : null;
+  if (ownerToken) {
+    const preview = await getOwnerInvitePreview(ownerToken);
+    if (preview?.isValid && preview.expectedEmail) {
+      lockedEmail = preview.expectedEmail;
     }
   }
 
@@ -50,7 +64,9 @@ export default async function SignupPage({
           <p className="mx-auto max-w-[22rem] text-sm leading-relaxed text-muted-foreground">
             {next
               ? lockedEmail
-                ? `Use o e-mail cadastrado pela academia: ${lockedEmail}`
+                ? next.startsWith("/owner-invite/")
+                  ? `Use o e-mail autorizado: ${lockedEmail}`
+                  : `Use o e-mail cadastrado pela academia: ${lockedEmail}`
                 : "Complete seu cadastro para aceitar o convite."
               : "Novas contas só com link de convite da academia. Peça o link ao professor ou à secretaria."}
           </p>

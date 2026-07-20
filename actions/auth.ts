@@ -223,7 +223,10 @@ async function getInviteSignupGate(
     if (!row?.is_valid) {
       return { ok: false, error: "Este convite é inválido, expirou ou já foi usado." };
     }
-    return { ok: true, expectedEmail: null };
+    return {
+      ok: true,
+      expectedEmail: (row.expected_email as string | null) ?? null,
+    };
   }
 
   return {

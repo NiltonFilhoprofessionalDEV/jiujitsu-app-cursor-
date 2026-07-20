@@ -82,14 +82,19 @@ export function SelectAcademyList({
                     "Sem localização"}
                   {" · "}
                   {roleLabels[academy.role]}
+                  {!academy.isActive ? " · Suspensa" : ""}
                 </p>
               </div>
               <Button
                 type="submit"
-                disabled={pending}
+                disabled={pending || !academy.isActive}
                 className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                {pending ? "Entrando…" : "Entrar"}
+                {!academy.isActive
+                  ? "Suspensa"
+                  : pending
+                    ? "Entrando…"
+                    : "Entrar"}
               </Button>
             </div>
           </form>

@@ -11,9 +11,11 @@ export default async function SelectAcademyPage() {
   const canCreate = await profileCanCreateAcademy();
   const activeId = await getActiveAcademyId();
 
-  // Cookie lost but user has exactly one academy — restore and continue.
-  if (academies.length === 1 && !activeId) {
-    const result = await selectAcademy(academies[0].id);
+  const activeAcademies = academies.filter((a) => a.isActive);
+
+  // Cookie lost but user has exactly one active academy — restore and continue.
+  if (activeAcademies.length === 1 && !activeId) {
+    const result = await selectAcademy(activeAcademies[0].id);
     // selectAcademy redirects on success; if it returns, show the list with error.
     if (result?.error) {
       // fall through to render list
@@ -23,8 +25,8 @@ export default async function SelectAcademyPage() {
   // Already has a valid active academy in cookie — don't trap the user here.
   if (
     activeId &&
-    academies.some((a) => a.id === activeId) &&
-    academies.length === 1
+    activeAcademies.some((a) => a.id === activeId) &&
+    activeAcademies.length === 1
   ) {
     redirect("/home");
   }

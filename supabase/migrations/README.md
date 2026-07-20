@@ -6,8 +6,10 @@
 6. Execute `0005_avatars_storage.sql` (avatars), se ainda não aplicou.
 7. Execute `0006_auto_open_sessions.sql` (abertura/fechamento automático de aulas).
 8. Execute `0009_virtual_lesson_social.sql` (favoritos/comentários), `0018_virtual_lesson_likes_replies.sql` (curtidas + respostas) e `0020_virtual_lesson_watches.sql` (vídeos assistidos).
-9. Em Database → Replication, habilite Realtime na tabela `attendance_requests`.
-10. Em produção (Vercel), defina `CRON_SECRET` e confira o cron em `vercel.json` (`*/2 * * * *` → `/api/cron/auto-sessions`).
+9. Execute `0008_owner_invites.sql` (gate de criação de academia) e `0021_platform_admin_owner_email.sql` (convite de dono por e-mail + suspensão).
+10. Em Database → Replication, habilite Realtime na tabela `attendance_requests`.
+11. Em produção (Vercel), defina `CRON_SECRET` e confira o cron em `vercel.json` (`*/2 * * * *` → `/api/cron/auto-sessions`).
+12. Defina `PLATFORM_ADMIN_EMAILS` com os e-mails que podem acessar `/admin`.
 
 ## Notas de segurança (0002)
 
