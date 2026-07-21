@@ -31,6 +31,7 @@ export type MyAcademy = {
   city: string | null;
   state: string | null;
   role: MemberRole;
+  isActive: boolean;
 };
 
 export type AcademyUnit = {
@@ -189,7 +190,7 @@ export async function listMyAcademies(): Promise<MyAcademy[]> {
 
   const { data, error } = await supabase
     .from("academy_members")
-    .select("role, academies(id, name, city, state)")
+    .select("role, academies(id, name, city, state, is_active)")
     .eq("profile_id", user.id)
     .eq("status", "active");
 
@@ -199,8 +200,20 @@ export async function listMyAcademies(): Promise<MyAcademy[]> {
 
   return (data ?? []).flatMap((row) => {
     const academy = row.academies as
-      | { id: string; name: string; city: string | null; state: string | null }
-      | { id: string; name: string; city: string | null; state: string | null }[]
+      | {
+          id: string;
+          name: string;
+          city: string | null;
+          state: string | null;
+          is_active: boolean;
+        }
+      | {
+          id: string;
+          name: string;
+          city: string | null;
+          state: string | null;
+          is_active: boolean;
+        }[]
       | null;
 
     const item = Array.isArray(academy) ? academy[0] : academy;
@@ -213,6 +226,7 @@ export async function listMyAcademies(): Promise<MyAcademy[]> {
         city: item.city,
         state: item.state,
         role: row.role as MemberRole,
+        isActive: item.is_active !== false,
       },
     ];
   });
@@ -236,7 +250,7 @@ export async function selectAcademy(
 
   const { data: member, error } = await supabase
     .from("academy_members")
-    .select("id, role")
+    .select("id, role, academies(is_active, suspension_reason)")
     .eq("profile_id", user.id)
     .eq("academy_id", academyId)
     .eq("status", "active")
@@ -244,6 +258,19 @@ export async function selectAcademy(
 
   if (error || !member) {
     return { error: "Você não pertence a esta academia" };
+  }
+
+  const academy = member.academies as
+    | { is_active: boolean; suspension_reason: string | null }
+    | { is_active: boolean; suspension_reason: string | null }[]
+    | null;
+  const academyRow = Array.isArray(academy) ? academy[0] : academy;
+  if (academyRow && academyRow.is_active === false) {
+    return {
+      error:
+        academyRow.suspension_reason?.trim() ||
+        "Esta academia está suspensa. Fale com o suporte do BJJ Pulse.",
+    };
   }
 
   await setActiveAcademyId(academyId);

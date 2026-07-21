@@ -39,10 +39,10 @@ export default async function WaitingAcademyPage() {
               Admin
             </p>
             <Link
-              href="/admin/owner-invites"
+              href="/admin"
               className="flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
-              Gerar convites de dono
+              Painel admin
             </Link>
             <Link
               href="/create-academy"

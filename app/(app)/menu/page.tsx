@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ChevronRight, LogOut } from "lucide-react";
+import { ChevronRight, LogOut, Shield } from "lucide-react";
 import { logout } from "@/actions/auth";
 import {
   getVisibleMenuNavItems,
@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { getActiveAcademyBrief } from "@/lib/academy/active";
 import { getUnreadBadges } from "@/lib/inbox/unread";
 import { getActiveMembership } from "@/lib/permissions/assert";
+import { isPlatformAdminEmail } from "@/lib/platform-admin";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function MenuPage() {
   let membership;
@@ -27,6 +29,12 @@ export default async function MenuPage() {
   } catch {
     redirect("/select-academy");
   }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isPlatformAdmin = isPlatformAdminEmail(user?.email);
 
   const links = getVisibleMenuNavItems(membership.role);
 
@@ -85,6 +93,26 @@ export default async function MenuPage() {
         No computador, os atalhos ficam na barra lateral. Use esta página para
         preferências.
       </p>
+
+      {isPlatformAdmin ? (
+        <section className="space-y-2">
+          <p className="px-1 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Platform
+          </p>
+          <Link
+            href="/admin"
+            className="group relative flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-[var(--surface-shadow)] backdrop-blur-xl transition duration-200 hover:translate-x-0.5 hover:bg-muted active:scale-[0.99]"
+          >
+            <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-background/70">
+              <Shield className="h-4 w-4 text-[var(--action-red)] transition group-hover:scale-110" />
+            </span>
+            <span className="flex-1 text-sm font-medium text-foreground">
+              Painel admin
+            </span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5" />
+          </Link>
+        </section>
+      ) : null}
 
       <section className="space-y-2">
         <p className="px-1 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
