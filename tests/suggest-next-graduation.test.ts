@@ -16,6 +16,17 @@ describe("suggestNextGraduation", () => {
     });
   });
 
+  it("moves through kids striped belts after the 4th degree", () => {
+    expect(suggestNextGraduation("Cinza / Branca", 4)).toEqual({
+      belt: "Cinza",
+      degree: 0,
+    });
+    expect(suggestNextGraduation("Verde / Preta", 4)).toEqual({
+      belt: "Azul",
+      degree: 0,
+    });
+  });
+
   it("defaults missing belt to Branca", () => {
     expect(suggestNextGraduation(null, 0)).toEqual({
       belt: "Branca",

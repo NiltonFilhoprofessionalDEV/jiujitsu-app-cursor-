@@ -306,10 +306,18 @@ function graduationCongrats(kind: "belt" | "degree", belt: string): string {
   }
   const lines: Record<string, string> = {
     Branca: "A jornada começa. Cada aula agora escreve a sua história.",
+    "Cinza / Branca": "Primeiros passos no grupo cinza. Continue aparecendo.",
     Cinza: "Primeiros passos firmes. Continue aparecendo no tatame.",
+    "Cinza / Preta": "Cinza consolidada. Disciplina começando a aparecer.",
+    "Amarela / Branca": "Entrada no amarelo. Base crescendo com paciência.",
     Amarela: "Base crescendo. Disciplina já aparece no seu jogo.",
+    "Amarela / Preta": "Amarela forte. Ritmo de treino ganhando constância.",
+    "Laranja / Branca": "Grupo laranja. Ritmo de quem treina de verdade.",
     Laranja: "Ritmo de quem treina de verdade. Segue firme.",
+    "Laranja / Preta": "Laranja avançada. Fundação cada vez mais sólida.",
+    "Verde / Branca": "Grupo verde. Você está construindo o próximo nível.",
     Verde: "Fundação sólida. Você está construindo o próximo nível.",
+    "Verde / Preta": "Verde avançada. Ponte para o jiu-jitsu adulto.",
     Azul: "Entrada no mundo adulto do jiu-jitsu. Respeito conquistado.",
     Roxa: "Maturidade no jogo. Poucos chegam aqui sem constância.",
     Marrom: "Quase no topo. Sua presença já inspira a academia.",
