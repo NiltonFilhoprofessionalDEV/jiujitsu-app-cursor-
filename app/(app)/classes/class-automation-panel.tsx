@@ -134,8 +134,8 @@ export function ClassAutomationPanel({
           Automação
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Defina com quantos minutos de antecedência a aula abre e fecha sozinha
-          — você fica livre de fazer isso na mão.
+          A aula abre/fecha sozinha no horário. Exige cron frequente (Netlify ou
+          GitHub Actions) — na Vercel Hobby o cron nativo (1x/dia) não basta.
         </p>
       </div>
 

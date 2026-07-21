@@ -1,17 +1,13 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { closeOverdueSessions } from "@/lib/sessions/close-overdue-sessions";
 import {
   resolveTimezone,
-  shouldAutoClose,
   shouldAutoOpen,
   zonedParts,
 } from "@/lib/sessions/auto-open";
+import type { AutoSessionsResult } from "@/lib/sessions/run-auto-sessions-types";
 
-export type AutoSessionsResult = {
-  opened: number;
-  closed: number;
-  skipped: number;
-  errors: string[];
-};
+export type { AutoSessionsResult } from "@/lib/sessions/run-auto-sessions-types";
 
 type ScheduleRow = {
   id: string;
@@ -49,23 +45,32 @@ type ScheduleRow = {
     | null;
 };
 
+type AdminClient = ReturnType<typeof createAdminClient>;
+
 function one<T>(value: T | T[] | null | undefined): T | null {
   if (!value) return null;
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
-export async function runAutoSessions(
-  now = new Date(),
-): Promise<AutoSessionsResult> {
-  const result: AutoSessionsResult = {
-    opened: 0,
-    closed: 0,
-    skipped: 0,
-    errors: [],
-  };
+function noteSkip(result: AutoSessionsResult, reason: string) {
+  result.skipped += 1;
+  if (result.skipReasons.length < 40) {
+    result.skipReasons.push(reason);
+  }
+}
 
-  const supabase = createAdminClient();
+const ELIGIBLE_ROLES = new Set([
+  "owner",
+  "administrator",
+  "instructor",
+  "assistant_instructor",
+]);
 
+async function openDueSchedules(
+  supabase: AdminClient,
+  now: Date,
+  result: AutoSessionsResult,
+) {
   const { data: schedules, error: schedulesError } = await supabase
     .from("class_schedules")
     .select(
@@ -92,14 +97,14 @@ export async function runAutoSessions(
 
   if (schedulesError) {
     result.errors.push(schedulesError.message);
-    return result;
+    return;
   }
 
   for (const raw of (schedules ?? []) as ScheduleRow[]) {
     try {
       const klass = one(raw.classes);
       if (!klass?.is_active) {
-        result.skipped += 1;
+        noteSkip(result, `${raw.id}: class_inactive`);
         continue;
       }
 
@@ -107,13 +112,6 @@ export async function runAutoSessions(
       const unit = one(klass.academy_units);
       const timeZone = resolveTimezone(unit?.timezone, academy?.timezone);
       const parts = zonedParts(now, timeZone);
-
-      const eligibleRoles = new Set([
-        "owner",
-        "administrator",
-        "instructor",
-        "assistant_instructor",
-      ]);
 
       const dueOpen = shouldAutoOpen({
         now,
@@ -124,76 +122,75 @@ export async function runAutoSessions(
         leadMinutes: raw.auto_open_lead_minutes,
       });
 
-      if (dueOpen) {
-        const { data: dayOverride } = await supabase
-          .from("class_schedule_day_overrides")
-          .select("cancelled, substitute_instructor_id")
-          .eq("schedule_id", raw.id)
-          .eq("date", parts.dateStr)
-          .maybeSingle();
+      if (!dueOpen) continue;
 
-        if (dayOverride?.cancelled) {
-          result.skipped += 1;
-          continue;
-        }
+      const { data: dayOverride } = await supabase
+        .from("class_schedule_day_overrides")
+        .select("cancelled, substitute_instructor_id")
+        .eq("schedule_id", raw.id)
+        .eq("date", parts.dateStr)
+        .maybeSingle();
 
-        const instructorId =
-          dayOverride?.substitute_instructor_id ??
-          klass.default_instructor_id;
+      if (dayOverride?.cancelled) {
+        noteSkip(result, `${raw.id}: day_cancelled`);
+        continue;
+      }
 
-        if (!instructorId) {
-          result.skipped += 1;
-          continue;
-        }
+      const instructorId =
+        dayOverride?.substitute_instructor_id ?? klass.default_instructor_id;
 
-        const { data: instructor } = await supabase
-          .from("academy_members")
-          .select("id, status, role")
-          .eq("id", instructorId)
-          .eq("academy_id", klass.academy_id)
-          .maybeSingle();
+      if (!instructorId) {
+        noteSkip(result, `${raw.id}: missing_instructor`);
+        continue;
+      }
 
-        if (
-          !instructor ||
-          instructor.status !== "active" ||
-          !eligibleRoles.has(instructor.role as string)
-        ) {
-          result.skipped += 1;
-          continue;
-        }
+      const { data: instructor } = await supabase
+        .from("academy_members")
+        .select("id, status, role")
+        .eq("id", instructorId)
+        .eq("academy_id", klass.academy_id)
+        .maybeSingle();
 
-        const { data: existing } = await supabase
-          .from("class_sessions")
-          .select("id")
-          .eq("schedule_id", raw.id)
-          .eq("date", parts.dateStr)
-          .maybeSingle();
+      if (
+        !instructor ||
+        instructor.status !== "active" ||
+        !ELIGIBLE_ROLES.has(instructor.role as string)
+      ) {
+        noteSkip(result, `${raw.id}: instructor_ineligible`);
+        continue;
+      }
 
-        if (existing) {
-          result.skipped += 1;
+      const { data: existing } = await supabase
+        .from("class_sessions")
+        .select("id")
+        .eq("schedule_id", raw.id)
+        .eq("date", parts.dateStr)
+        .maybeSingle();
+
+      if (existing) {
+        noteSkip(result, `${raw.id}: already_exists`);
+        continue;
+      }
+
+      const { error: insertError } = await supabase
+        .from("class_sessions")
+        .insert({
+          class_id: klass.id,
+          instructor_id: instructorId,
+          schedule_id: raw.id,
+          date: parts.dateStr,
+          started_at: now.toISOString(),
+          status: "open",
+        });
+
+      if (insertError) {
+        if (insertError.code === "23505") {
+          noteSkip(result, `${raw.id}: race_exists`);
         } else {
-          const { error: insertError } = await supabase
-            .from("class_sessions")
-            .insert({
-              class_id: klass.id,
-              instructor_id: instructorId,
-              schedule_id: raw.id,
-              date: parts.dateStr,
-              started_at: now.toISOString(),
-              status: "open",
-            });
-
-          if (insertError) {
-            // Unique race: treat as skip
-            if (insertError.code === "23505") {
-              result.skipped += 1;
-            } else {
-              result.errors.push(`${raw.id}: ${insertError.message}`);
-            }
-          } else {
-            result.opened += 1;
-          }
+          result.errors.push(`${raw.id}: ${insertError.message}`);
         }
+      } else {
+        result.opened += 1;
       }
     } catch (err) {
       result.errors.push(
@@ -201,121 +198,21 @@ export async function runAutoSessions(
       );
     }
   }
+}
 
-  const { data: openSessions, error: openError } = await supabase
-    .from("class_sessions")
-    .select(
-      `
-      id,
-      date,
-      schedule_id,
-      class_schedules (
-        end_time,
-        auto_close_grace_minutes,
-        classes (
-          unit_id,
-          academies ( timezone ),
-          academy_units ( timezone )
-        )
-      )
-    `,
-    )
-    .eq("status", "open")
-    .not("schedule_id", "is", null);
+export async function runAutoSessions(
+  now = new Date(),
+): Promise<AutoSessionsResult> {
+  const result: AutoSessionsResult = {
+    opened: 0,
+    closed: 0,
+    skipped: 0,
+    errors: [],
+    skipReasons: [],
+  };
 
-  if (openError) {
-    result.errors.push(openError.message);
-    return result;
-  }
-
-  for (const session of openSessions ?? []) {
-    try {
-      const schedule = one(
-        session.class_schedules as
-          | {
-              end_time: string;
-              auto_close_grace_minutes: number;
-              classes:
-                | {
-                    academies: { timezone: string | null } | { timezone: string | null }[] | null;
-                    academy_units:
-                      | { timezone: string | null }
-                      | { timezone: string | null }[]
-                      | null;
-                  }
-                | {
-                    academies: { timezone: string | null } | { timezone: string | null }[] | null;
-                    academy_units:
-                      | { timezone: string | null }
-                      | { timezone: string | null }[]
-                      | null;
-                  }[]
-                | null;
-            }
-          | {
-              end_time: string;
-              auto_close_grace_minutes: number;
-              classes:
-                | {
-                    academies: { timezone: string | null } | { timezone: string | null }[] | null;
-                    academy_units:
-                      | { timezone: string | null }
-                      | { timezone: string | null }[]
-                      | null;
-                  }
-                | {
-                    academies: { timezone: string | null } | { timezone: string | null }[] | null;
-                    academy_units:
-                      | { timezone: string | null }
-                      | { timezone: string | null }[]
-                      | null;
-                  }[]
-                | null;
-            }[]
-          | null,
-      );
-      if (!schedule) {
-        result.skipped += 1;
-        continue;
-      }
-
-      const klass = one(schedule.classes);
-      const academy = one(klass?.academies ?? null);
-      const unit = one(klass?.academy_units ?? null);
-      const timeZone = resolveTimezone(unit?.timezone, academy?.timezone);
-
-      if (
-        !shouldAutoClose({
-          now,
-          timeZone,
-          sessionDate: session.date as string,
-          endTime: schedule.end_time,
-          graceMinutes: schedule.auto_close_grace_minutes,
-        })
-      ) {
-        continue;
-      }
-
-      const { error: closeError } = await supabase
-        .from("class_sessions")
-        .update({
-          status: "finished",
-          finished_at: now.toISOString(),
-        })
-        .eq("id", session.id)
-        .eq("status", "open");
-
-      if (closeError) {
-        result.errors.push(`${session.id}: ${closeError.message}`);
-      } else {
-        result.closed += 1;
-      }
-    } catch (err) {
-      result.errors.push(
-        `${session.id}: ${err instanceof Error ? err.message : "erro"}`,
-      );
-    }
-  }
-
+  const supabase = createAdminClient();
+  await openDueSchedules(supabase, now, result);
+  await closeOverdueSessions(supabase, now, result);
   return result;
 }

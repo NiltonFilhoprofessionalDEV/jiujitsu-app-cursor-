@@ -2,6 +2,10 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+# Every 2 minutes — open/close class sessions automatically
+[functions."auto-sessions"]
+  schedule = "*/2 * * * *"
+
 # Every 10 minutes — push reminder ~1h before class
 [functions."class-reminders"]
   schedule = "*/10 * * * *"
