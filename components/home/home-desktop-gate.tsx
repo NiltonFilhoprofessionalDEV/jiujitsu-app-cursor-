@@ -8,10 +8,12 @@ export function HomeDesktopGate({
   canGraduate,
   canAnnounce,
   canAddVideo,
+  canViewMembers,
 }: {
   canGraduate: boolean;
   canAnnounce: boolean;
   canAddVideo: boolean;
+  canViewMembers: boolean;
 }) {
   const [enabled, setEnabled] = useState(false);
 
@@ -31,6 +33,7 @@ export function HomeDesktopGate({
             canGraduate={canGraduate}
             canAnnounce={canAnnounce}
             canAddVideo={canAddVideo}
+            canViewMembers={canViewMembers}
           />
         </div>
       ) : (

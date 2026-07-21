@@ -4,6 +4,7 @@ import useSWR from "swr";
 import type { DashboardData } from "@/actions/dashboard";
 import { fetchHomeDashboard } from "@/actions/swr-data";
 import {
+  BirthdaysCard,
   CheckinQueueCard,
   MetricGlassCard,
   NextClassCard,
@@ -53,11 +54,13 @@ export function HomeDashboardBodyClient({
   canGraduate,
   canAnnounce,
   canAddVideo,
+  canViewMembers,
 }: {
   initialData?: DashboardData;
   canGraduate: boolean;
   canAnnounce: boolean;
   canAddVideo: boolean;
+  canViewMembers: boolean;
 }) {
   const { data = initialData } = useSWR(
     swrKeys.homeDashboard,
@@ -85,6 +88,11 @@ export function HomeDashboardBodyClient({
       <CheckinQueueCard
         pendingCount={data.pendingApprovals}
         firstSessionId={firstPendingSession}
+      />
+
+      <BirthdaysCard
+        birthdays={data.birthdays ?? []}
+        canOpenMember={canViewMembers}
       />
 
       <NextClassCard next={data.nextClass} />

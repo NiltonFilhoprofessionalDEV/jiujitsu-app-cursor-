@@ -1,4 +1,7 @@
 import { redirect } from "next/navigation";
+import {
+  listEligibleGraduationCandidates,
+} from "@/actions/belt-requirements";
 import type { GraduationRow } from "@/actions/graduations";
 import { listGraduations } from "@/actions/graduations";
 import { listMembers } from "@/actions/members";
@@ -7,6 +10,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { withPreviousBelt } from "@/lib/graduations/with-previous-belt";
 import { getActiveMembership } from "@/lib/permissions/assert";
 import { can } from "@/lib/permissions/capabilities";
+import { EligibleGraduationsPanel } from "./eligible-graduations-panel";
 import { GraduationHistoryCard } from "./graduation-history-card";
 import { GraduationsFilterBar } from "./graduations-filter-bar";
 import { GraduationsPagination } from "./graduations-pagination";
@@ -73,11 +77,15 @@ export default async function GraduationsPage({
 
   let graduations: GraduationRow[] = [];
   let members: Awaited<ReturnType<typeof listMembers>> = [];
+  let eligible: Awaited<
+    ReturnType<typeof listEligibleGraduationCandidates>
+  > = [];
 
   try {
     graduations = await listGraduations();
     if (canGraduate) {
       members = await listMembers({ status: "active" });
+      eligible = await listEligibleGraduationCandidates();
     }
   } catch {
     redirect("/select-academy");
@@ -122,6 +130,8 @@ export default async function GraduationsPage({
             : "Histórico permanente de faixas e graus"
         }
       />
+
+      {canGraduate ? <EligibleGraduationsPanel candidates={eligible} /> : null}
 
       <GraduationsFilterBar
         initial={{

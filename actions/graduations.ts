@@ -8,6 +8,9 @@ import {
   type HistoryBeltRow,
 } from "@/lib/graduations/sync-member-belt";
 import {
+  clearEligibilityAlertsForMember,
+} from "@/actions/belt-requirements";
+import {
   assertCapability,
   getActiveMembership,
   PermissionError,
@@ -308,6 +311,7 @@ export async function createGraduation(
           : `Você conquistou o ${memberPatch.current_degree}º grau na faixa ${memberPatch.current_belt}.`,
       });
     }
+    await clearEligibilityAlertsForMember(target.id as string);
     revalidateGraduationPaths(target.id as string);
     return { success: "Graduação registrada com sucesso." };
   } catch (err) {

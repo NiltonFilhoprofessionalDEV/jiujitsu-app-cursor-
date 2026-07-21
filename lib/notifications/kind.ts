@@ -1,6 +1,7 @@
 import {
   Award,
   Bell,
+  Cake,
   ClipboardCheck,
   Megaphone,
   Trophy,
@@ -12,6 +13,7 @@ export type NotificationKind =
   | "attendance"
   | "trophy"
   | "announcement"
+  | "birthday"
   | "general";
 
 export function inferNotificationKind(
@@ -20,6 +22,12 @@ export function inferNotificationKind(
 ): NotificationKind {
   const text = `${title} ${description ?? ""}`.toLowerCase();
 
+  if (
+    text.includes("anivers") ||
+    text.includes("birthday")
+  ) {
+    return "birthday";
+  }
   if (
     text.includes("gradua") ||
     text.includes("faixa") ||
@@ -74,6 +82,12 @@ export function notificationKindMeta(kind: NotificationKind): {
         icon: Megaphone,
         wash: "var(--inbox-icon-announce)",
         label: "Aviso",
+      };
+    case "birthday":
+      return {
+        icon: Cake,
+        wash: "var(--inbox-icon-grad)",
+        label: "Aniversário",
       };
     default:
       return {

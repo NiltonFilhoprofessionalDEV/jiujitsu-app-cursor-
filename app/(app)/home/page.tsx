@@ -118,6 +118,7 @@ export default async function HomePage() {
   const canGraduate = can(membership.role, "graduate");
   const canAnnounce = can(membership.role, "manage_announcements");
   const canAddVideo = can(membership.role, "manage_virtual_lessons");
+  const canViewMembers = can(membership.role, "view_members");
 
   return (
     <div className="space-y-5 lg:space-y-6">
@@ -129,7 +130,10 @@ export default async function HomePage() {
 
       {/* Mobile: painel slim (ops) */}
       <div className="space-y-5 lg:hidden">
-        <HomeOpsBodyClient initialData={board} />
+        <HomeOpsBodyClient
+          initialData={board}
+          canViewMembers={canViewMembers}
+        />
       </div>
 
       {/* Desktop: dashboard completo — só monta em lg+ */}
@@ -137,6 +141,7 @@ export default async function HomePage() {
         canGraduate={canGraduate}
         canAnnounce={canAnnounce}
         canAddVideo={canAddVideo}
+        canViewMembers={canViewMembers}
       />
     </div>
   );

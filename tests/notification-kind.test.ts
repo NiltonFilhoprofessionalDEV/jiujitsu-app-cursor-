@@ -14,6 +14,10 @@ describe("inferNotificationKind", () => {
     expect(inferNotificationKind("Novo troféu!")).toBe("trophy");
   });
 
+  it("detects birthday", () => {
+    expect(inferNotificationKind("Aniversário hoje")).toBe("birthday");
+  });
+
   it("falls back to general", () => {
     expect(inferNotificationKind("Olá")).toBe("general");
   });

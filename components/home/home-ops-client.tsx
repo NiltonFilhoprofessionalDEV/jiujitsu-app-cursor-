@@ -5,6 +5,7 @@ import useSWR from "swr";
 import type { HomeOpsBoard } from "@/actions/dashboard";
 import { fetchHomeOps } from "@/actions/swr-data";
 import {
+  BirthdaysCard,
   CheckinQueueCard,
   NextClassCard,
   NowOnMatBoard,
@@ -13,8 +14,10 @@ import { swrKeys } from "@/lib/swr/keys";
 
 export function HomeOpsBodyClient({
   initialData,
+  canViewMembers,
 }: {
   initialData: HomeOpsBoard;
+  canViewMembers: boolean;
 }) {
   const { data = initialData } = useSWR(swrKeys.homeOps, fetchHomeOps, {
     fallbackData: initialData,
@@ -43,6 +46,11 @@ export function HomeOpsBodyClient({
       <CheckinQueueCard
         pendingCount={data.pendingApprovals}
         firstSessionId={firstPendingSession}
+      />
+
+      <BirthdaysCard
+        birthdays={data.birthdays ?? []}
+        canOpenMember={canViewMembers}
       />
 
       <NextClassCard next={data.nextClass} />

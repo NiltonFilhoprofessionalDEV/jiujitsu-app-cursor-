@@ -1,16 +1,17 @@
 import { redirect } from "next/navigation";
-import { getJourneyData } from "@/actions/journey";
+import { getMemberBeltProgress } from "@/actions/belt-requirements";
+import { getJourneyData, type JourneyData } from "@/actions/journey";
 import {
   JourneyHabits,
   JourneyMonthlyChart,
 } from "@/components/journey/journey-habits";
+import { JourneyBeltProgressCard } from "@/components/journey/journey-belt-progress";
 import { JourneySummary } from "@/components/journey/journey-summary";
 import { JourneyTimeline } from "@/components/journey/journey-timeline";
 import { JourneyTrackSwitch } from "@/components/journey/journey-track-switch";
 import { TrophySection } from "@/components/journey/trophy-section";
 import { PageHeader } from "@/components/layout/page-header";
 import { PermissionError } from "@/lib/permissions/assert";
-import type { JourneyData } from "@/actions/journey";
 
 export default async function JourneyPage({
   searchParams,
@@ -27,6 +28,9 @@ export default async function JourneyPage({
     }
     redirect("/select-academy");
   }
+
+  const beltProgress =
+    data.track === "student" ? await getMemberBeltProgress() : null;
 
   const description =
     data.track === "teaching"
@@ -53,6 +57,10 @@ export default async function JourneyPage({
         currentDegree={data.currentDegree}
         track={data.track}
       />
+
+      {data.track === "student" ? (
+        <JourneyBeltProgressCard progress={beltProgress} />
+      ) : null}
 
       <JourneyHabits
         track={data.track}

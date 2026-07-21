@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   Award,
+  Cake,
   CalendarDays,
   CheckCircle2,
   Clapperboard,
@@ -11,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import type {
+  BirthdayEntry,
   NextClassBoard,
   OpenSessionBoardItem,
 } from "@/actions/dashboard";
@@ -249,6 +251,97 @@ export function NextClassCard({ next }: { next: NextClassBoard }) {
           {cta}
         </Link>
       </div>
+    </section>
+  );
+}
+
+function birthdayWhenLabel(entry: BirthdayEntry): string {
+  if (entry.is_today) return "Hoje";
+  const d = new Date(`${entry.occurs_on}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return entry.occurs_on;
+  return d.toLocaleDateString("pt-BR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+  });
+}
+
+export function BirthdaysCard({
+  birthdays,
+  canOpenMember,
+}: {
+  birthdays: BirthdayEntry[];
+  canOpenMember: boolean;
+}) {
+  if (birthdays.length === 0) return null;
+
+  const today = birthdays.filter((b) => b.is_today);
+  const upcoming = birthdays.filter((b) => !b.is_today);
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-[var(--surface-shadow)]">
+      <div className="flex items-center gap-2">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--action-red)]/12 text-[var(--action-red)]">
+          <Cake className="h-5 w-5" />
+        </span>
+        <div>
+          <p className="text-sm font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Aniversariantes
+          </p>
+          <p className="text-xs text-muted-foreground">Hoje e próximos 7 dias</p>
+        </div>
+      </div>
+
+      <ul className="mt-3 space-y-2">
+        {[...today, ...upcoming].map((entry) => {
+          const content = (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-foreground">
+                  {entry.name}
+                </p>
+                {entry.age != null ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Completa {entry.age} anos
+                  </p>
+                ) : null}
+              </div>
+              <span
+                className={cn(
+                  "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide",
+                  entry.is_today
+                    ? "bg-[var(--action-red)]/15 text-[var(--action-red)]"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {birthdayWhenLabel(entry)}
+              </span>
+            </>
+          );
+
+          if (canOpenMember) {
+            return (
+              <li key={entry.member_id}>
+                <Link
+                  href={`/members/${entry.member_id}`}
+                  className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 transition hover:bg-muted active:scale-[0.99]"
+                >
+                  {content}
+                </Link>
+              </li>
+            );
+          }
+
+          return (
+            <li
+              key={entry.member_id}
+              className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/40 px-3 py-2.5"
+            >
+              {content}
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }

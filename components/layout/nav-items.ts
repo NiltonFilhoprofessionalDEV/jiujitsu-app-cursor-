@@ -156,7 +156,8 @@ export const MENU_NAV_ITEMS: MenuNavItem[] = [
     href: "/academy",
     label: "Academia",
     icon: "academy",
-    canShow: (role) => can(role, "manage_academy"),
+    canShow: (role) =>
+      can(role, "manage_academy") || can(role, "graduate"),
   },
   {
     href: "/profile",

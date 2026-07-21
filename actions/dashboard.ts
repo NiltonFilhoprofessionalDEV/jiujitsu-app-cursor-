@@ -5,8 +5,14 @@ import {
   findNextTraining,
   type ScheduleSlot,
 } from "@/lib/classes/next-training";
+import {
+  loadAcademyBirthdays,
+  type BirthdayEntry,
+} from "@/lib/birthdays/load";
 import { resolveTimezone } from "@/lib/sessions/auto-open";
 import { createClient } from "@/lib/supabase/server";
+
+export type { BirthdayEntry };
 
 export type DashboardMetrics = {
   activeStudents: number;
@@ -61,6 +67,7 @@ export type DashboardData = {
   openSessions: OpenSessionBoardItem[];
   pendingApprovals: number;
   nextClass: NextClassBoard;
+  birthdays: BirthdayEntry[];
 };
 
 export type StatsCharts = {
@@ -517,6 +524,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     openSessions,
     pendingApprovals,
     nextClass,
+    birthdays: await loadAcademyBirthdays(academyId, 7),
   };
 }
 
@@ -524,6 +532,7 @@ export type HomeOpsBoard = {
   openSessions: OpenSessionBoardItem[];
   pendingApprovals: number;
   nextClass: NextClassBoard;
+  birthdays: BirthdayEntry[];
 };
 
 /** Lightweight board for professor Home — avoids full dashboard query storm. */
@@ -715,7 +724,12 @@ export async function getHomeOpsBoard(): Promise<HomeOpsBoard> {
     };
   }
 
-  return { openSessions, pendingApprovals, nextClass };
+  return {
+    openSessions,
+    pendingApprovals,
+    nextClass,
+    birthdays: await loadAcademyBirthdays(academyId, 7),
+  };
 }
 
 export async function getStatsCharts(): Promise<StatsCharts> {

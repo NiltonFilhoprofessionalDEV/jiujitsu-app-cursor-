@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { unlockAchievementsIfNeeded } from "@/actions/journey";
+import { checkAndNotifyGraduationEligibility } from "@/actions/belt-requirements";
 import {
   canApproveRequest,
   canRequestCheckin,
@@ -414,8 +415,10 @@ export async function approveCheckin(
         memberId: request.student_id as string,
         profileId: am.profile_id,
       });
+      await checkAndNotifyGraduationEligibility(request.student_id as string);
       revalidatePath("/journey");
       revalidatePath("/notifications");
+      revalidatePath("/graduations");
     }
 
     revalidatePath(`/sessions/${request.session_id}`);
@@ -636,8 +639,10 @@ export async function manualAttendance(
       memberId: studentMemberId,
       profileId: student.profile_id as string,
     });
+    await checkAndNotifyGraduationEligibility(studentMemberId);
     revalidatePath("/journey");
     revalidatePath("/notifications");
+    revalidatePath("/graduations");
 
     revalidatePath(`/sessions/${sessionId}`);
     revalidatePath("/checkin");
