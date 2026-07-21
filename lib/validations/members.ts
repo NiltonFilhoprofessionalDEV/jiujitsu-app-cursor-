@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { BELT_OPTIONS } from "@/lib/belts/options";
+
+export { BELT_OPTIONS } from "@/lib/belts/options";
+export type { BeltOption } from "@/lib/belts/options";
 
 const optionalString = z
   .string()
@@ -15,20 +19,6 @@ export const memberRoleSchema = z.enum([
 ]);
 
 export const memberStatusSchema = z.enum(["active", "inactive", "suspended"]);
-
-export const BELT_OPTIONS = [
-  "Branca",
-  "Cinza",
-  "Amarela",
-  "Laranja",
-  "Verde",
-  "Azul",
-  "Roxa",
-  "Marrom",
-  "Preta",
-  "Coral",
-  "Vermelha",
-] as const;
 
 export const beltSchema = z.enum(BELT_OPTIONS);
 
