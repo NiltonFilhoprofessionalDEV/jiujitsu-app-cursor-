@@ -14,12 +14,18 @@ jobs:
           APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          APP_BASE_URL="$(echo -n "$APP_BASE_URL" | tr -d '\r' | sed 's:/*$::')"
+          CRON_SECRET="$(echo -n "$CRON_SECRET" | tr -d '\r' | xargs)"
+
           if [ -z "$APP_BASE_URL" ] || [ -z "$CRON_SECRET" ]; then
             echo "Missing APP_BASE_URL or CRON_SECRET repository secret."
+            echo "Set them under GitHub → Settings → Secrets and variables → Actions."
             exit 1
           fi
 
-          curl --fail --show-error --silent \
+          echo "Calling $APP_BASE_URL/api/cron/auto-sessions"
+          response="$(curl --fail-with-body --show-error --silent \
             --request POST \
             --header "Authorization: Bearer $CRON_SECRET" \
-            "$APP_BASE_URL/api/cron/auto-sessions"
+            "$APP_BASE_URL/api/cron/auto-sessions")"
+          echo "$response"
