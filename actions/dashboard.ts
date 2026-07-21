@@ -12,8 +12,6 @@ import {
 import { resolveTimezone } from "@/lib/sessions/auto-open";
 import { createClient } from "@/lib/supabase/server";
 
-export type { BirthdayEntry };
-
 export type DashboardMetrics = {
   activeStudents: number;
   instructors: number;

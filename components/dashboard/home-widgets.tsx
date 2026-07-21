@@ -12,10 +12,10 @@ import {
   Users,
 } from "lucide-react";
 import type {
-  BirthdayEntry,
   NextClassBoard,
   OpenSessionBoardItem,
 } from "@/actions/dashboard";
+import type { BirthdayEntry } from "@/lib/birthdays/range";
 import { formatTimeHm } from "@/lib/classes/next-training";
 import { cn } from "@/lib/utils";
 
