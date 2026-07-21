@@ -40,6 +40,7 @@ async function safeNextPath(formData: FormData): Promise<string | null> {
 async function redirectAfterAuth(
   userId: string,
   nextPath?: string | null,
+  emailHint?: string | null,
 ): Promise<AuthActionState> {
   if (nextPath) {
     redirect(nextPath);
@@ -66,16 +67,18 @@ async function redirectAfterAuth(
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    const email = emailHint ?? user?.email;
     const { data: profile } = await supabase
       .from("profiles")
       .select("can_create_academy")
       .eq("id", userId)
       .maybeSingle();
 
-    if (
-      profile?.can_create_academy ||
-      isPlatformAdminEmail(user?.email)
-    ) {
+    // Platform admin lands on the admin console, not academy creation.
+    if (isPlatformAdminEmail(email)) {
+      redirect("/admin");
+    }
+    if (profile?.can_create_academy) {
       redirect("/create-academy");
     }
     redirect("/waiting-academy");
@@ -118,7 +121,11 @@ export async function login(
   }
 
   const nextPath = await safeNextPath(formData);
-  return await redirectAfterAuth(data.user.id, nextPath);
+  return await redirectAfterAuth(
+    data.user.id,
+    nextPath,
+    data.user.email ?? parsed.data.email,
+  );
 }
 
 export async function signup(
@@ -173,7 +180,11 @@ export async function signup(
   }
 
   if (data.session && data.user) {
-    return await redirectAfterAuth(data.user.id, nextPath);
+    return await redirectAfterAuth(
+      data.user.id,
+      nextPath,
+      data.user.email ?? parsed.data.email,
+    );
   }
 
   redirect(`/login?next=${encodeURIComponent(nextPath)}`);
