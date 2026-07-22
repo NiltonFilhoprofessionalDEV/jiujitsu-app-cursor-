@@ -1,12 +1,18 @@
 import { z } from "zod";
 
-const optionalString = z
-  .string()
-  .trim()
-  .transform((value) => (value === "" ? undefined : value));
+/** Optional form string: accepts undefined/null/empty → undefined. */
+const optionalString = z.preprocess((value) => {
+  if (value == null) return undefined;
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed === "" ? undefined : trimmed;
+}, z.string().optional());
 
 export const createAcademySchema = z.object({
-  name: z.string().trim().min(1, "Nome é obrigatório"),
+  name: z.preprocess(
+    (value) => (typeof value === "string" ? value : ""),
+    z.string().trim().min(1, "Nome é obrigatório"),
+  ),
   phone: optionalString,
   email: optionalString,
   instagram: optionalString,
@@ -20,7 +26,10 @@ export const createAcademySchema = z.object({
 export const updateAcademySchema = createAcademySchema;
 
 export const createUnitSchema = z.object({
-  name: z.string().trim().min(1, "Nome é obrigatório"),
+  name: z.preprocess(
+    (value) => (typeof value === "string" ? value : ""),
+    z.string().trim().min(1, "Nome é obrigatório"),
+  ),
   address: optionalString,
   city: optionalString,
   state: optionalString,

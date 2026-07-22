@@ -88,7 +88,7 @@ export async function createAcademy(
   formData: FormData,
 ): Promise<AcademyActionState> {
   const parsed = createAcademySchema.safeParse({
-    name: formData.get("name"),
+    name: formOptional(formData, "name"),
     phone: formOptional(formData, "phone"),
     email: formOptional(formData, "email"),
     instagram: formOptional(formData, "instagram"),
@@ -96,6 +96,7 @@ export async function createAcademy(
     state: formOptional(formData, "state"),
     address: formOptional(formData, "address"),
     description: formOptional(formData, "description"),
+    timezone: formOptional(formData, "timezone") || "America/Sao_Paulo",
   });
 
   if (!parsed.success) {
