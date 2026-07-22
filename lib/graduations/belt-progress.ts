@@ -1,5 +1,8 @@
 import { BELT_OPTIONS } from "@/lib/validations/members";
-import { suggestNextGraduation } from "@/lib/graduations/suggest-next";
+import {
+  suggestNextGraduationForAge,
+  type BeltAgeOverride,
+} from "@/lib/belts/progression";
 
 /** Degrees on a belt before the next belt promotion (0→1→2→3→4). */
 export const DEGREES_PER_BELT = 4;
@@ -7,6 +10,8 @@ export const DEGREES_PER_BELT = 4;
 export type BeltRequirement = {
   belt: string;
   classesPerDegree: number;
+  minAge?: number | null;
+  maxAge?: number | null;
 };
 
 export type BeltProgress = {
@@ -22,6 +27,8 @@ export type BeltProgress = {
   eligibleForDegree: boolean;
   eligibleForBelt: boolean;
   configured: boolean;
+  ageBlocked: boolean;
+  age: number | null;
 };
 
 export function requirementForBelt(
@@ -33,17 +40,30 @@ export function requirementForBelt(
   return row.classesPerDegree;
 }
 
+function overridesFrom(
+  requirements: BeltRequirement[],
+): BeltAgeOverride[] {
+  return requirements.map((r) => ({
+    belt: r.belt,
+    minAge: r.minAge ?? null,
+    maxAge: r.maxAge ?? null,
+  }));
+}
+
 /**
  * Progress toward next degree / next belt.
  * One configured number = classes needed for EACH degree step on that belt.
- * Path: degree 0→1→2→3→4, then next belt at degree 0.
+ * Next belt respects age-based sequence.
  */
 export function computeBeltProgress(input: {
   currentBelt: string | null | undefined;
   currentDegree: number | null | undefined;
   classesSinceGraduation: number;
   requirements: BeltRequirement[];
+  age?: number | null;
 }): BeltProgress {
+  const age = input.age ?? null;
+  const overrides = overridesFrom(input.requirements);
   const belt =
     input.currentBelt &&
     BELT_OPTIONS.includes(input.currentBelt as (typeof BELT_OPTIONS)[number])
@@ -55,8 +75,15 @@ export function computeBeltProgress(input: {
       : 0;
   const classes = Math.max(0, Math.trunc(input.classesSinceGraduation));
   const perDegree = requirementForBelt(input.requirements, belt);
-  const afterFour = suggestNextGraduation(belt, DEGREES_PER_BELT);
-  const nextBeltName = afterFour.belt !== belt ? afterFour.belt : null;
+  const afterFour = suggestNextGraduationForAge(
+    belt,
+    DEGREES_PER_BELT,
+    age,
+    overrides,
+  );
+  const nextBeltName =
+    afterFour.ageBlocked || afterFour.belt === belt ? null : afterFour.belt;
+  const ageBlocked = Boolean(afterFour.ageBlocked);
 
   if (perDegree == null) {
     return {
@@ -72,6 +99,8 @@ export function computeBeltProgress(input: {
       eligibleForDegree: false,
       eligibleForBelt: false,
       configured: false,
+      ageBlocked,
+      age,
     };
   }
 
@@ -93,6 +122,8 @@ export function computeBeltProgress(input: {
       eligibleForBelt:
         Boolean(nextBeltName) && classes >= perDegree * stepsToBelt,
       configured: true,
+      ageBlocked,
+      age,
     };
   }
 
@@ -111,5 +142,7 @@ export function computeBeltProgress(input: {
     eligibleForDegree: false,
     eligibleForBelt: Boolean(nextBeltName) && classes >= perDegree,
     configured: true,
+    ageBlocked,
+    age,
   };
 }

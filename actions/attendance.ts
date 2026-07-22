@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { unlockAchievementsIfNeeded } from "@/actions/journey";
-import { checkAndNotifyGraduationEligibility } from "@/actions/belt-requirements";
+import { checkAndNotifyGraduationEligibility } from "@/actions/graduation-eligibility";
 import {
   canApproveRequest,
   canRequestCheckin,
