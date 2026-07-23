@@ -69,8 +69,8 @@ export function GraduationCelebrationOverlay({
         }}
       />
 
-      <div className="trophy-celebrate-glow pointer-events-none absolute left-1/2 top-[40%] h-[min(110vw,760px)] w-[min(110vw,760px)] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
-      <div className="trophy-celebrate-flare pointer-events-none absolute left-1/2 top-[40%] h-[min(85vw,520px)] w-[min(85vw,520px)] -translate-x-1/2 -translate-y-1/2 rounded-full" />
+      <div className="trophy-celebrate-glow pointer-events-none absolute left-1/2 top-[42%] h-[min(120vw,900px)] w-[min(120vw,900px)] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
+      <div className="trophy-celebrate-flare pointer-events-none absolute left-1/2 top-[42%] h-[min(95vw,640px)] w-[min(95vw,640px)] -translate-x-1/2 -translate-y-1/2 rounded-full" />
 
       <button
         type="button"
@@ -79,16 +79,16 @@ export function GraduationCelebrationOverlay({
         onClick={dismiss}
       />
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5">
         <p
-          className="trophy-celebrate-copy shrink-0 text-center text-xl font-semibold uppercase tracking-[0.18em] sm:text-2xl"
+          className="trophy-celebrate-copy shrink-0 text-center text-lg font-semibold uppercase tracking-[0.18em] sm:text-xl"
           style={{ color: "var(--trophy-celebrate-eyebrow)" }}
         >
           {item.kind === "belt" ? "Nova faixa" : "Novo grau"}
         </p>
 
-        <div className="flex min-h-0 w-full flex-1 items-center justify-center py-2">
-          <div className="trophy-celebrate-reveal">
+        <div className="flex min-h-0 w-full flex-[1.4] items-center justify-center py-1">
+          <div className="trophy-celebrate-reveal max-h-full max-w-full">
             <div className="trophy-celebrate-float">
               <BeltDegreeVisual
                 belt={item.belt}
@@ -101,11 +101,11 @@ export function GraduationCelebrationOverlay({
           </div>
         </div>
 
-        <div className="trophy-celebrate-copy shrink-0 max-w-sm space-y-3 text-center">
+        <div className="trophy-celebrate-copy shrink-0 max-w-sm space-y-2 text-center">
           <div className="space-y-1">
             <p
               id="graduation-celebration-title"
-              className="font-display text-4xl tracking-[0.14em] sm:text-5xl"
+              className="font-display text-3xl tracking-[0.14em] sm:text-4xl"
               style={{ color: "var(--trophy-celebrate-ink)" }}
             >
               Parabéns!
@@ -129,7 +129,7 @@ export function GraduationCelebrationOverlay({
         <button
           type="button"
           onClick={dismiss}
-          className="trophy-celebrate-cta mt-7 inline-flex h-12 w-full max-w-xs shrink-0 items-center justify-center rounded-xl text-sm font-medium transition hover:brightness-110"
+          className="trophy-celebrate-cta relative z-20 mt-4 inline-flex h-12 w-full max-w-xs shrink-0 items-center justify-center rounded-xl text-sm font-medium transition hover:brightness-110"
           style={{
             background: "var(--trophy-celebrate-cta-bg)",
             color: "var(--trophy-celebrate-cta-fg)",
