@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { GraduationCelebrationItem } from "@/actions/journey";
-import { beltNeedsDarkInk, beltSwatch } from "@/lib/belts/colors";
+import { BeltDegreeVisual } from "@/components/journey/belt-degree-visual";
+import { beltDegreeImageSrc } from "@/lib/belts/assets";
+import { beltSwatch } from "@/lib/belts/colors";
 import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "bjj-graduation-celebrated-ids";
 
@@ -25,67 +26,6 @@ function markCelebrated(id: string) {
   const next = readCelebratedIds();
   next.add(id);
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
-}
-
-function GraduationBeltHero({
-  belt,
-  degree,
-}: {
-  belt: string;
-  degree: number;
-}) {
-  const swatch = beltSwatch(belt);
-  const darkInk = beltNeedsDarkInk(belt);
-  const isBlack = belt === "Preta";
-
-  return (
-    <div className="flex w-full max-w-sm flex-col items-center gap-5">
-      <div
-        className="relative h-16 w-full overflow-hidden rounded-full shadow-[0_24px_80px_rgba(0,0,0,0.75)] ring-1 ring-white/15"
-        style={{ background: swatch }}
-        aria-hidden
-      >
-        {/* Degree bars */}
-        {degree > 0 ? (
-          <div className="absolute inset-y-0 left-1/2 flex -translate-x-1/2 items-center gap-1.5">
-            {Array.from({ length: Math.min(degree, 6) }).map((_, i) => (
-              <span
-                key={i}
-                className={cn(
-                  "h-10 w-1.5 rounded-sm",
-                  isBlack || !darkInk ? "bg-white/90" : "bg-black/80",
-                )}
-              />
-            ))}
-          </div>
-        ) : null}
-
-        {/* Black belt tip: red + white */}
-        {isBlack ? (
-          <span className="absolute inset-y-0 right-0 flex w-[22%]">
-            <span className="h-full w-[55%] bg-[var(--action-red)]" />
-            <span className="h-full w-[45%] bg-white" />
-          </span>
-        ) : null}
-      </div>
-
-      <p
-        className={cn(
-          "rounded-full px-4 py-1.5 text-sm font-semibold tracking-wide",
-          darkInk ? "text-neutral-900" : "text-white",
-        )}
-        style={{
-          background: swatch,
-          boxShadow: isBlack
-            ? "inset 0 0 0 1px rgba(255,255,255,0.18)"
-            : undefined,
-        }}
-      >
-        {belt}
-        {degree > 0 ? ` · ${degree}º` : ""}
-      </p>
-    </div>
-  );
 }
 
 export function GraduationCelebrationOverlay({
@@ -144,13 +84,19 @@ export function GraduationCelebrationOverlay({
           className="trophy-celebrate-copy shrink-0 text-center text-xl font-semibold uppercase tracking-[0.18em] sm:text-2xl"
           style={{ color: "var(--trophy-celebrate-eyebrow)" }}
         >
-          Graduação conquistada
+          {item.kind === "belt" ? "Nova faixa" : "Novo grau"}
         </p>
 
         <div className="flex min-h-0 w-full flex-1 items-center justify-center py-2">
-          <div className="trophy-celebrate-reveal w-full">
-            <div className="trophy-celebrate-float flex justify-center">
-              <GraduationBeltHero belt={item.belt} degree={item.degree} />
+          <div className="trophy-celebrate-reveal">
+            <div className="trophy-celebrate-float">
+              <BeltDegreeVisual
+                belt={item.belt}
+                degree={item.degree}
+                unlocked
+                imageSrc={beltDegreeImageSrc(item.belt, item.degree)}
+                size="hero"
+              />
             </div>
           </div>
         </div>
@@ -162,7 +108,7 @@ export function GraduationCelebrationOverlay({
               className="font-display text-4xl tracking-[0.14em] sm:text-5xl"
               style={{ color: "var(--trophy-celebrate-ink)" }}
             >
-              {item.title}
+              Parabéns!
             </p>
             <p
               className="text-sm font-medium tracking-wide"
@@ -207,7 +153,7 @@ function buildCelebrationItem(input: {
     !input.previous || input.previous.belt !== input.belt
       ? "belt"
       : "degree";
-  const title = kind === "belt" ? "Nova faixa!" : "Novo grau!";
+  const title = "Parabéns!";
   const label =
     kind === "belt"
       ? input.degree > 0
@@ -216,8 +162,8 @@ function buildCelebrationItem(input: {
       : `${input.degree}º grau · ${input.belt}`;
   const message =
     kind === "degree"
-      ? `Mais um grau na faixa ${input.belt}. Persistência no tatame tem nome — o seu.`
-      : `Nova faixa ${input.belt}. O tatame reconhece quem não desiste.`;
+      ? `Parabéns pelo novo grau na faixa ${input.belt}. Persistência no tatame tem nome — o seu.`
+      : `Parabéns pela nova faixa ${input.belt}. O tatame reconhece quem não desiste.`;
 
   return {
     id: input.id,

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Lock } from "lucide-react";
-import { BeltDegreeDetailSheet } from "@/components/journey/belt-degree-detail-sheet";
+import { BeltDegreeCelebrationOverlay } from "@/components/journey/belt-degree-celebration";
 import { BeltDegreeVisual } from "@/components/journey/belt-degree-visual";
 import type { JourneyBeltCard } from "@/lib/journey/belt-collection";
 import { cn } from "@/lib/utils";
@@ -26,7 +26,7 @@ export function BeltDegreeSection({
             Faixas e graus
           </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Toque numa faixa para ver fotos e datas
+            Toque numa faixa para celebrar a conquista
             {age != null ? ` · ${age} anos` : ""}
           </p>
         </div>
@@ -100,13 +100,12 @@ export function BeltDegreeSection({
         ))}
       </div>
 
-      <BeltDegreeDetailSheet
-        card={selected}
-        open={selected != null}
-        onOpenChange={(open) => {
-          if (!open) setSelected(null);
-        }}
-      />
+      {selected ? (
+        <BeltDegreeCelebrationOverlay
+          card={selected}
+          onDismiss={() => setSelected(null)}
+        />
+      ) : null}
     </section>
   );
 }

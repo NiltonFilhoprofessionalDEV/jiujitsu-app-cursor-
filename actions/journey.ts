@@ -302,32 +302,43 @@ export type GraduationCelebrationItem = {
 
 function graduationCongrats(kind: "belt" | "degree", belt: string): string {
   if (kind === "degree") {
-    return `Mais um grau na faixa ${belt}. Persistência no tatame tem nome — o seu.`;
+    return `Parabéns pelo novo grau na faixa ${belt}. Persistência no tatame tem nome — o seu.`;
   }
   const lines: Record<string, string> = {
-    Branca: "A jornada começa. Cada aula agora escreve a sua história.",
-    "Cinza / Branca": "Primeiros passos no grupo cinza. Continue aparecendo.",
-    Cinza: "Primeiros passos firmes. Continue aparecendo no tatame.",
-    "Cinza / Preta": "Cinza consolidada. Disciplina começando a aparecer.",
-    "Amarela / Branca": "Entrada no amarelo. Base crescendo com paciência.",
-    Amarela: "Base crescendo. Disciplina já aparece no seu jogo.",
-    "Amarela / Preta": "Amarela forte. Ritmo de treino ganhando constância.",
-    "Laranja / Branca": "Grupo laranja. Ritmo de quem treina de verdade.",
-    Laranja: "Ritmo de quem treina de verdade. Segue firme.",
-    "Laranja / Preta": "Laranja avançada. Fundação cada vez mais sólida.",
-    "Verde / Branca": "Grupo verde. Você está construindo o próximo nível.",
-    Verde: "Fundação sólida. Você está construindo o próximo nível.",
-    "Verde / Preta": "Verde avançada. Ponte para o jiu-jitsu adulto.",
-    Azul: "Entrada no mundo adulto do jiu-jitsu. Respeito conquistado.",
-    Roxa: "Maturidade no jogo. Poucos chegam aqui sem constância.",
-    Marrom: "Quase no topo. Sua presença já inspira a academia.",
-    Preta: "Faixa preta. Sonho de muitos, realidade de poucos — e você chegou.",
-    Coral: "Legado vivo. Sua trajetória marca gerações no tatame.",
-    Vermelha: "Cume da montanha. Honra ao caminho que você trilhou.",
+    Branca: "Parabéns! A jornada começa. Cada aula agora escreve a sua história.",
+    "Cinza / Branca":
+      "Parabéns! Primeiros passos no grupo cinza. Continue aparecendo.",
+    Cinza: "Parabéns! Primeiros passos firmes. Continue aparecendo no tatame.",
+    "Cinza / Preta":
+      "Parabéns! Cinza consolidada. Disciplina começando a aparecer.",
+    "Amarela / Branca":
+      "Parabéns! Entrada no amarelo. Base crescendo com paciência.",
+    Amarela: "Parabéns! Base crescendo. Disciplina já aparece no seu jogo.",
+    "Amarela / Preta":
+      "Parabéns! Amarela forte. Ritmo de treino ganhando constância.",
+    "Laranja / Branca":
+      "Parabéns! Grupo laranja. Ritmo de quem treina de verdade.",
+    Laranja: "Parabéns! Ritmo de quem treina de verdade. Segue firme.",
+    "Laranja / Preta":
+      "Parabéns! Laranja avançada. Fundação cada vez mais sólida.",
+    "Verde / Branca":
+      "Parabéns! Grupo verde. Você está construindo o próximo nível.",
+    Verde:
+      "Parabéns! Fundação sólida. Você está construindo o próximo nível.",
+    "Verde / Preta":
+      "Parabéns! Verde avançada. Ponte para o jiu-jitsu adulto.",
+    Azul:
+      "Parabéns! Entrada no mundo adulto do jiu-jitsu. Respeito conquistado.",
+    Roxa: "Parabéns! Maturidade no jogo. Poucos chegam aqui sem constância.",
+    Marrom: "Parabéns! Quase no topo. Sua presença já inspira a academia.",
+    Preta:
+      "Parabéns! Faixa preta. Sonho de muitos, realidade de poucos — e você chegou.",
+    Coral: "Parabéns! Legado vivo. Sua trajetória marca gerações no tatame.",
+    Vermelha: "Parabéns! Cume da montanha. Honra ao caminho que você trilhou.",
   };
   return (
     lines[belt] ??
-    `Nova faixa ${belt}. O tatame reconhece quem não desiste.`
+    `Parabéns pela nova faixa ${belt}. O tatame reconhece quem não desiste.`
   );
 }
 
@@ -342,7 +353,7 @@ function classifyGraduationCelebration(input: {
       ? "belt"
       : "degree";
 
-  const title = kind === "belt" ? "Nova faixa!" : "Novo grau!";
+  const title = "Parabéns!";
   const label =
     kind === "belt"
       ? input.degree > 0
