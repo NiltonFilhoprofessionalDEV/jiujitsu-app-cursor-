@@ -98,7 +98,7 @@ function CommentItem({
               maxLength={1000}
               autoFocus
               placeholder={`Responder a ${comment.author_name}…`}
-              className="h-9 min-w-0 flex-1 rounded-full border border-input bg-transparent px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+              className="h-9 min-w-0 flex-1 rounded-full border border-input bg-card px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
             />
             <Button
               type="submit"

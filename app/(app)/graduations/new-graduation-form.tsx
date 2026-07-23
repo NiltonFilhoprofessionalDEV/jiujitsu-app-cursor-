@@ -14,7 +14,7 @@ import { suggestNextGraduation } from "@/lib/graduations/suggest-next";
 import { BELT_OPTIONS } from "@/lib/validations/members";
 
 const selectClassName =
-  "flex h-11 w-full rounded-xl border border-input bg-transparent px-3 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50";
+  "flex h-11 w-full rounded-xl border border-input bg-card px-3 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50";
 
 const initialState: GraduationActionState = null;
 
