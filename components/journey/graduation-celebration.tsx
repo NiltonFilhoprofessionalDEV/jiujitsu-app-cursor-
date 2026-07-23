@@ -129,7 +129,7 @@ export function GraduationCelebrationOverlay({
         <button
           type="button"
           onClick={dismiss}
-          className="trophy-celebrate-cta mt-7 inline-flex h-12 w-full max-w-xs shrink-0 items-center justify-center rounded-xl text-sm font-medium transition hover:brightness-110"
+          className="trophy-celebrate-cta relative z-20 mt-4 inline-flex h-12 w-full max-w-xs shrink-0 items-center justify-center rounded-xl text-sm font-medium transition hover:brightness-110"
           style={{
             background: "var(--trophy-celebrate-cta-bg)",
             color: "var(--trophy-celebrate-cta-fg)",
