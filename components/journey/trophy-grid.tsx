@@ -3,7 +3,6 @@
 import { Lock } from "lucide-react";
 import {
   milestonesForTrack,
-  type JourneyMilestone,
   type JourneyTrack,
 } from "@/lib/journey/milestones";
 import { TrophyImage } from "@/components/journey/trophy-image";
@@ -13,17 +12,17 @@ export function TrophyGrid({
   track,
   unlockedCodes,
   recentUnlockedCodes,
-  onPreview,
+  onOpenUnlocked,
 }: {
   track: JourneyTrack;
   unlockedCodes: string[];
   recentUnlockedCodes: string[];
-  onPreview?: (milestone: JourneyMilestone) => void;
+  /** Only called for trophies the member already unlocked */
+  onOpenUnlocked?: (code: string) => void;
 }) {
   const unlockedSet = new Set(unlockedCodes);
   const recentSet = new Set(recentUnlockedCodes);
   const milestones = milestonesForTrack(track);
-  const canPreview = Boolean(onPreview);
 
   return (
     <section className="space-y-3.5 sm:space-y-3">
@@ -31,11 +30,9 @@ export function TrophyGrid({
         <h2 className="font-display text-lg tracking-[0.1em] text-foreground sm:text-base sm:tracking-[0.12em]">
           Troféus
         </h2>
-        {canPreview ? (
-          <p className="text-xs text-muted-foreground sm:text-[10px]">
-            Toque para ver
-          </p>
-        ) : null}
+        <p className="text-xs text-muted-foreground sm:text-[10px]">
+          Só conquistas liberadas
+        </p>
       </div>
       <div className="grid grid-cols-3 gap-2.5 sm:gap-2">
         {milestones.map((milestone) => {
@@ -47,7 +44,7 @@ export function TrophyGrid({
               <div className="relative">
                 <TrophyImage
                   material={milestone.material}
-                  unlocked={unlocked || canPreview}
+                  unlocked={unlocked}
                   size="md"
                 />
                 {!unlocked ? (
@@ -60,15 +57,13 @@ export function TrophyGrid({
                 <p
                   className={cn(
                     "text-sm font-semibold leading-tight sm:text-xs",
-                    unlocked || canPreview
-                      ? "text-foreground"
-                      : "text-muted-foreground",
+                    unlocked ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
                   {milestone.materialLabel}
                 </p>
                 <p className="text-xs leading-snug text-muted-foreground sm:text-[10px]">
-                  {milestone.label}
+                  {unlocked ? milestone.label : "Bloqueado"}
                 </p>
               </div>
             </>
@@ -76,24 +71,26 @@ export function TrophyGrid({
 
           const shellClass = cn(
             "relative flex min-h-[8.5rem] flex-col items-center gap-2 rounded-2xl border border-border bg-card p-3.5 text-center shadow-[var(--surface-shadow)] backdrop-blur-xl transition sm:min-h-0 sm:gap-1.5 sm:p-3",
-            !unlocked && !canPreview && "opacity-70",
-            canPreview && "active:scale-[0.98] hover:border-foreground/25",
+            !unlocked && "opacity-70",
+            unlocked &&
+              onOpenUnlocked &&
+              "active:scale-[0.98] hover:border-foreground/25",
             recent && "animate-pulse ring-2 ring-[var(--action-red)]",
           );
 
-          if (canPreview && onPreview) {
+          if (unlocked && onOpenUnlocked) {
             return (
               <button
                 key={milestone.code}
                 type="button"
-                onClick={() => onPreview(milestone)}
+                onClick={() => onOpenUnlocked(milestone.code)}
                 className={shellClass}
                 style={
                   recent
                     ? { boxShadow: "0 0 22px var(--fab-glow)" }
                     : undefined
                 }
-                aria-label={`Pré-visualizar ${milestone.materialLabel}`}
+                aria-label={`Ver ${milestone.materialLabel}`}
               >
                 {content}
               </button>
@@ -108,6 +105,11 @@ export function TrophyGrid({
                 recent
                   ? { boxShadow: "0 0 22px var(--fab-glow)" }
                   : undefined
+              }
+              aria-label={
+                unlocked
+                  ? milestone.materialLabel
+                  : `${milestone.materialLabel} bloqueado`
               }
             >
               {content}

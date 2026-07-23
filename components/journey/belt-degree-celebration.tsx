@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { BeltDegreeVisual } from "@/components/journey/belt-degree-visual";
 import { beltSwatch } from "@/lib/belts/colors";
 import type {
@@ -27,10 +27,7 @@ function stageLabel(degree: number): string {
   return degree === 0 ? "Faixa conquistada" : `${degree}º grau`;
 }
 
-function congratsFor(belt: string, degree: number, unlocked: boolean): string {
-  if (!unlocked) {
-    return "Continue no tatame. Essa conquista ainda está no seu caminho.";
-  }
+function congratsFor(belt: string, degree: number): string {
   if (degree === 0) {
     return `Parabéns pela faixa ${belt}. O tatame reconhece quem não desiste.`;
   }
@@ -44,11 +41,15 @@ export function BeltDegreeCelebrationOverlay({
   card: JourneyBeltCard;
   onDismiss: () => void;
 }) {
+  const unlockedStages = useMemo(
+    () => card.stages.filter((s) => s.unlocked),
+    [card.stages],
+  );
+
   const initialIndex = useMemo(() => {
-    if (!card.unlocked) return 0;
-    const highest = card.highestDegree ?? 0;
-    return Math.max(0, Math.min(card.stages.length - 1, highest));
-  }, [card]);
+    if (unlockedStages.length === 0) return 0;
+    return unlockedStages.length - 1;
+  }, [unlockedStages]);
 
   const [index, setIndex] = useState(initialIndex);
 
@@ -56,19 +57,17 @@ export function BeltDegreeCelebrationOverlay({
     setIndex(initialIndex);
   }, [card.belt, initialIndex]);
 
+  if (unlockedStages.length === 0) return null;
+
   const stage: JourneyBeltStage =
-    card.stages[index] ?? card.stages[0]!;
+    unlockedStages[index] ?? unlockedStages[0]!;
   const glow = beltSwatch(card.belt);
   const earnedLabel = formatEarnedAt(stage.earnedAt);
-  const title = stage.unlocked ? "Parabéns!" : "Ainda falta";
-  const subtitle = stage.unlocked
-    ? stageLabel(stage.degree)
-    : `${stageLabel(stage.degree)} · bloqueado`;
 
   function go(delta: number) {
     setIndex((current) => {
       const next = current + delta;
-      if (next < 0 || next >= card.stages.length) return current;
+      if (next < 0 || next >= unlockedStages.length) return current;
       return next;
     });
   }
@@ -132,22 +131,17 @@ export function BeltDegreeCelebrationOverlay({
               <BeltDegreeVisual
                 belt={card.belt}
                 degree={stage.degree}
-                unlocked={stage.unlocked}
+                unlocked
                 imageSrc={stage.imageSrc}
                 size="hero"
               />
             </div>
-            {!stage.unlocked ? (
-              <span className="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full bg-black/70 text-white ring-1 ring-white/20">
-                <Lock className="h-5 w-5" />
-              </span>
-            ) : null}
           </div>
 
           <button
             type="button"
             onClick={() => go(1)}
-            disabled={index >= card.stages.length - 1}
+            disabled={index >= unlockedStages.length - 1}
             className="absolute right-0 z-20 inline-flex h-12 w-12 items-center justify-center rounded-full bg-black/35 text-white/90 backdrop-blur-sm transition enabled:hover:bg-black/50 disabled:opacity-20 sm:right-2"
             aria-label="Próximo grau"
           >
@@ -155,27 +149,28 @@ export function BeltDegreeCelebrationOverlay({
           </button>
         </div>
 
-        <div
-          className="relative z-20 mb-2 flex items-center gap-1.5"
-          role="tablist"
-          aria-label="Graus da faixa"
-        >
-          {card.stages.map((s, i) => (
-            <button
-              key={s.degree}
-              type="button"
-              role="tab"
-              aria-selected={i === index}
-              onClick={() => setIndex(i)}
-              className={cn(
-                "h-2 rounded-full transition-all",
-                i === index ? "w-6 bg-[var(--action-red)]" : "w-2 bg-white/30",
-                s.unlocked ? "" : "opacity-50",
-              )}
-              aria-label={stageLabel(s.degree)}
-            />
-          ))}
-        </div>
+        {unlockedStages.length > 1 ? (
+          <div
+            className="relative z-20 mb-2 flex items-center gap-1.5"
+            role="tablist"
+            aria-label="Graus conquistados"
+          >
+            {unlockedStages.map((s, i) => (
+              <button
+                key={s.degree}
+                type="button"
+                role="tab"
+                aria-selected={i === index}
+                onClick={() => setIndex(i)}
+                className={cn(
+                  "h-2 rounded-full transition-all",
+                  i === index ? "w-6 bg-[var(--action-red)]" : "w-2 bg-white/30",
+                )}
+                aria-label={stageLabel(s.degree)}
+              />
+            ))}
+          </div>
+        ) : null}
 
         <div className="trophy-celebrate-copy shrink-0 max-w-sm space-y-2 text-center">
           <div className="space-y-1">
@@ -184,13 +179,13 @@ export function BeltDegreeCelebrationOverlay({
               className="font-display text-3xl tracking-[0.14em] sm:text-4xl"
               style={{ color: "var(--trophy-celebrate-ink)" }}
             >
-              {title}
+              Parabéns!
             </p>
             <p
               className="text-sm font-medium tracking-wide"
               style={{ color: "var(--trophy-celebrate-ink)" }}
             >
-              {subtitle}
+              {stageLabel(stage.degree)}
               {earnedLabel ? (
                 <span style={{ color: "var(--trophy-celebrate-muted)" }}>
                   {" "}
@@ -204,7 +199,7 @@ export function BeltDegreeCelebrationOverlay({
             className="text-sm leading-relaxed"
             style={{ color: "var(--trophy-celebrate-muted)" }}
           >
-            {congratsFor(card.belt, stage.degree, stage.unlocked)}
+            {congratsFor(card.belt, stage.degree)}
           </p>
         </div>
 

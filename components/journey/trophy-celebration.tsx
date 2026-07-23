@@ -5,7 +5,6 @@ import type { TrophyCelebrationItem } from "@/actions/journey";
 import { TrophyImage } from "@/components/journey/trophy-image";
 import {
   findMilestoneByCode,
-  milestonesForTrack,
   trophyTitle,
   type JourneyTrack,
   type TrophyMaterial,
@@ -276,45 +275,9 @@ export function TrophyCelebrationHost({
   );
 }
 
-/** @deprecated Use TrophySection — kept for compatibility. */
-export function TrophyCelebrationPreview({
-  track = "student",
-}: {
+/** @deprecated Preview removido — usuários só veem conquistas liberadas. */
+export function TrophyCelebrationPreview(_props?: {
   track?: JourneyTrack;
 }) {
-  const [queue, setQueue] = useState<TrophyCelebrationItem[]>([]);
-
-  const startPreview = useCallback(() => {
-    const milestones = milestonesForTrack(track);
-    const items: TrophyCelebrationItem[] = milestones.map((m, index) => ({
-      id: `preview-${m.code}-${Date.now()}-${index}`,
-      code: m.code,
-      material: m.material,
-      materialLabel: m.materialLabel,
-      label: m.label,
-      title: trophyTitle(m),
-    }));
-    setQueue(items);
-  }, [track]);
-
-  const current = queue[0] ?? null;
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={startPreview}
-        className="w-full rounded-xl border border-dashed border-border px-4 py-3 text-sm text-muted-foreground transition hover:border-foreground/30 hover:text-foreground"
-      >
-        Pré-visualizar celebração dos troféus
-      </button>
-      {current ? (
-        <TrophyCelebrationOverlay
-          item={current}
-          persist={false}
-          onDismiss={() => setQueue((q) => q.slice(1))}
-        />
-      ) : null}
-    </>
-  );
+  return null;
 }
