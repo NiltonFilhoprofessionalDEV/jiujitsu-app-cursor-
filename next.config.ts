@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
   // next-pwa injects webpack; empty turbopack config silences Next 16 warning
   turbopack: {},
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
         protocol: "https",

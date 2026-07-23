@@ -134,6 +134,7 @@ export function BeltDegreeCelebrationOverlay({
                 unlocked
                 imageSrc={stage.imageSrc}
                 size="hero"
+                priority
               />
             </div>
           </div>

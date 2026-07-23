@@ -96,6 +96,7 @@ export function GraduationCelebrationOverlay({
                 unlocked
                 imageSrc={beltDegreeImageSrc(item.belt, item.degree)}
                 size="hero"
+                priority
               />
             </div>
           </div>

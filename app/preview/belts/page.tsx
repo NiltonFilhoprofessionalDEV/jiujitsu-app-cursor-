@@ -24,7 +24,8 @@ export default async function PreviewBeltsPage() {
         <p className="text-sm font-medium text-red-500">Preview</p>
         <h1 className="text-2xl font-bold">Faixas</h1>
         <p className="text-sm text-zinc-400">
-          PNGs com fundo transparente — fundo escuro para conferir o recorte.
+          PNGs/WebP com fundo transparente — fundo escuro para conferir o
+          recorte.
         </p>
       </header>
 
