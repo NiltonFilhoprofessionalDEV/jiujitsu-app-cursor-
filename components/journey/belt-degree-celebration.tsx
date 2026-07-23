@@ -98,8 +98,8 @@ export function BeltDegreeCelebrationOverlay({
         }}
       />
 
-      <div className="trophy-celebrate-glow pointer-events-none absolute left-1/2 top-[38%] h-[min(110vw,760px)] w-[min(110vw,760px)] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
-      <div className="trophy-celebrate-flare pointer-events-none absolute left-1/2 top-[38%] h-[min(85vw,520px)] w-[min(85vw,520px)] -translate-x-1/2 -translate-y-1/2 rounded-full" />
+      <div className="trophy-celebrate-glow pointer-events-none absolute left-1/2 top-[42%] h-[min(120vw,900px)] w-[min(120vw,900px)] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl" />
+      <div className="trophy-celebrate-flare pointer-events-none absolute left-1/2 top-[42%] h-[min(95vw,640px)] w-[min(95vw,640px)] -translate-x-1/2 -translate-y-1/2 rounded-full" />
 
       <button
         type="button"
@@ -108,26 +108,26 @@ export function BeltDegreeCelebrationOverlay({
         onClick={onDismiss}
       />
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-5">
         <p
-          className="trophy-celebrate-copy shrink-0 text-center text-xl font-semibold uppercase tracking-[0.18em] sm:text-2xl"
+          className="trophy-celebrate-copy shrink-0 text-center text-lg font-semibold uppercase tracking-[0.18em] sm:text-xl"
           style={{ color: "var(--trophy-celebrate-eyebrow)" }}
         >
           {card.belt}
         </p>
 
-        <div className="flex min-h-0 w-full flex-1 items-center justify-center gap-2 py-2">
+        <div className="relative flex min-h-0 w-full flex-[1.4] items-center justify-center py-1">
           <button
             type="button"
             onClick={() => go(-1)}
             disabled={index <= 0}
-            className="relative z-20 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white/80 transition enabled:hover:bg-white/10 disabled:opacity-25"
+            className="absolute left-0 z-20 inline-flex h-12 w-12 items-center justify-center rounded-full bg-black/35 text-white/90 backdrop-blur-sm transition enabled:hover:bg-black/50 disabled:opacity-20 sm:left-2"
             aria-label="Grau anterior"
           >
-            <ChevronLeft className="h-6 w-6" />
+            <ChevronLeft className="h-7 w-7" />
           </button>
 
-          <div className="trophy-celebrate-reveal relative">
+          <div className="trophy-celebrate-reveal relative max-h-full max-w-full">
             <div className="trophy-celebrate-float">
               <BeltDegreeVisual
                 belt={card.belt}
@@ -138,7 +138,7 @@ export function BeltDegreeCelebrationOverlay({
               />
             </div>
             {!stage.unlocked ? (
-              <span className="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-black/70 text-white ring-1 ring-white/20">
+              <span className="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full bg-black/70 text-white ring-1 ring-white/20">
                 <Lock className="h-5 w-5" />
               </span>
             ) : null}
@@ -148,15 +148,15 @@ export function BeltDegreeCelebrationOverlay({
             type="button"
             onClick={() => go(1)}
             disabled={index >= card.stages.length - 1}
-            className="relative z-20 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white/80 transition enabled:hover:bg-white/10 disabled:opacity-25"
+            className="absolute right-0 z-20 inline-flex h-12 w-12 items-center justify-center rounded-full bg-black/35 text-white/90 backdrop-blur-sm transition enabled:hover:bg-black/50 disabled:opacity-20 sm:right-2"
             aria-label="Próximo grau"
           >
-            <ChevronRight className="h-6 w-6" />
+            <ChevronRight className="h-7 w-7" />
           </button>
         </div>
 
         <div
-          className="relative z-20 mb-3 flex items-center gap-1.5"
+          className="relative z-20 mb-2 flex items-center gap-1.5"
           role="tablist"
           aria-label="Graus da faixa"
         >
@@ -177,11 +177,11 @@ export function BeltDegreeCelebrationOverlay({
           ))}
         </div>
 
-        <div className="trophy-celebrate-copy shrink-0 max-w-sm space-y-3 text-center">
+        <div className="trophy-celebrate-copy shrink-0 max-w-sm space-y-2 text-center">
           <div className="space-y-1">
             <p
               id="belt-celebration-title"
-              className="font-display text-4xl tracking-[0.14em] sm:text-5xl"
+              className="font-display text-3xl tracking-[0.14em] sm:text-4xl"
               style={{ color: "var(--trophy-celebrate-ink)" }}
             >
               {title}
@@ -211,7 +211,7 @@ export function BeltDegreeCelebrationOverlay({
         <button
           type="button"
           onClick={onDismiss}
-          className="trophy-celebrate-cta relative z-20 mt-7 inline-flex h-12 w-full max-w-xs shrink-0 items-center justify-center rounded-xl text-sm font-medium transition hover:brightness-110"
+          className="trophy-celebrate-cta relative z-20 mt-4 inline-flex h-12 w-full max-w-xs shrink-0 items-center justify-center rounded-xl text-sm font-medium transition hover:brightness-110"
           style={{
             background: "var(--trophy-celebrate-cta-bg)",
             color: "var(--trophy-celebrate-cta-fg)",

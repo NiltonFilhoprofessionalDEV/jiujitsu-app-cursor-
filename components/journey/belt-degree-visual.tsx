@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 const SIZE_CLASS = {
   md: "h-14 w-14 sm:h-12 sm:w-12",
   lg: "h-20 w-20 sm:h-16 sm:w-16",
-  hero: "h-[min(58vw,280px)] w-[min(58vw,280px)] drop-shadow-[0_24px_80px_rgba(0,0,0,0.75)]",
+  /** Full-bleed hero — matches trophy celebration scale */
+  hero: "h-[min(72vh,96vw)] w-[min(72vh,96vw)] max-h-[min(72vh,720px)] max-w-[min(96vw,720px)] drop-shadow-[0_28px_90px_rgba(0,0,0,0.8)]",
 } as const;
 
 export function BeltDegreeVisual({
