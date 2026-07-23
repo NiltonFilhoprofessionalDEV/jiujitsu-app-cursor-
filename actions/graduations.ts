@@ -9,7 +9,7 @@ import {
 } from "@/lib/graduations/sync-member-belt";
 import {
   clearEligibilityAlertsForMember,
-} from "@/actions/belt-requirements";
+} from "@/actions/graduation-eligibility";
 import {
   assertCapability,
   getActiveMembership,

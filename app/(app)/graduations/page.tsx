@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import {
   listEligibleGraduationCandidates,
-} from "@/actions/belt-requirements";
+} from "@/actions/graduation-eligibility";
 import type { GraduationRow } from "@/actions/graduations";
 import { listGraduations } from "@/actions/graduations";
 import { listMembers } from "@/actions/members";

@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
 import { getMemberBeltProgress } from "@/actions/belt-requirements";
 import { getJourneyData, type JourneyData } from "@/actions/journey";
+import { getJourneyBeltCollection } from "@/actions/journey-belts";
 import {
   JourneyHabits,
   JourneyMonthlyChart,
 } from "@/components/journey/journey-habits";
+import { BeltDegreeSection } from "@/components/journey/belt-degree-section";
 import { JourneyBeltProgressCard } from "@/components/journey/journey-belt-progress";
 import { JourneySummary } from "@/components/journey/journey-summary";
 import { JourneyTimeline } from "@/components/journey/journey-timeline";
@@ -29,8 +31,13 @@ export default async function JourneyPage({
     redirect("/select-academy");
   }
 
-  const beltProgress =
-    data.track === "student" ? await getMemberBeltProgress() : null;
+  const [beltProgress, beltCollection] =
+    data.track === "student"
+      ? await Promise.all([
+          getMemberBeltProgress(),
+          getJourneyBeltCollection(),
+        ])
+      : [null, null];
 
   const description =
     data.track === "teaching"
@@ -60,6 +67,14 @@ export default async function JourneyPage({
 
       {data.track === "student" ? (
         <JourneyBeltProgressCard progress={beltProgress} />
+      ) : null}
+
+      {data.track === "student" && beltCollection ? (
+        <BeltDegreeSection
+          cards={beltCollection.cards}
+          age={beltCollection.age}
+          ageMissing={beltCollection.ageMissing}
+        />
       ) : null}
 
       <JourneyHabits

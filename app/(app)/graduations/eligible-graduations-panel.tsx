@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { EligibleGraduationCandidate } from "@/actions/belt-requirements";
+import type { EligibleGraduationCandidate } from "@/actions/graduation-eligibility";
 import { BeltPill } from "@/components/belts/belt-pill";
 
 export function EligibleGraduationsPanel({

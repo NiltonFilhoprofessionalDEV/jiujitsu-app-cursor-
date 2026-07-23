@@ -78,6 +78,13 @@ function JourneyBeltProgress({ progress }: { progress: BeltProgress }) {
           eligible={progress.eligibleForBelt}
         />
       ) : null}
+
+      {progress.ageBlocked ? (
+        <p className="text-xs text-muted-foreground">
+          Próxima faixa liberada pela idade (cadastre ou aguarde completar a
+          idade mínima do próximo grupo).
+        </p>
+      ) : null}
     </section>
   );
 }

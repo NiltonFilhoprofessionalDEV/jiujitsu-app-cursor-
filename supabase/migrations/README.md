@@ -10,12 +10,13 @@
 10. Execute `0021_birthday_notifications_sent.sql` (dedupe de alertas de aniversário para staff).
 11. Execute `0022_belt_degree_requirements.sql` (metas de aulas por faixa/grau + alertas de elegibilidade) — use `IF NOT EXISTS` (já pode estar aplicado).
 12. Execute `0023_kids_belt_levels.sql` (faixas infantis IBJJF: cinza/amarela/laranja/verde com combinações).
-13. Em Database → Replication, habilite Realtime na tabela `attendance_requests`.
-14. Em produção, defina `CRON_SECRET` e um disparador frequente para auto-open:
+13. Execute `0024_belt_requirement_ages.sql` (idade mín/máx por faixa nas metas da academia).
+14. Em Database → Replication, habilite Realtime na tabela `attendance_requests`.
+15. Em produção, defina `CRON_SECRET` e um disparador frequente para auto-open:
     - **Netlify:** scheduled functions `auto-sessions` (`*/2`) e `class-reminders` (`*/10`) em `netlify.toml` (precisa `SITE_URL`/`URL` + `CRON_SECRET`).
     - **GitHub Actions:** workflows `cron-auto-sessions.yml` e `cron-class-reminders.yml` com secrets `APP_BASE_URL` + `CRON_SECRET`.
     - **Vercel Hobby:** o cron nativo em `vercel.json` roda só 1x/dia — use Netlify ou Actions para abertura de aulas.
-15. Defina `PLATFORM_ADMIN_EMAILS` com os e-mails que podem acessar `/admin`.
+16. Defina `PLATFORM_ADMIN_EMAILS` com os e-mails que podem acessar `/admin`.
 
 ## Notas de segurança (0002)
 
