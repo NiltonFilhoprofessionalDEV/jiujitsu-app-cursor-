@@ -73,4 +73,49 @@ describe("buildJourneyBeltCollection", () => {
     expect(amarela?.stages[2]?.earnedAt).toBe("2025-01-10");
     expect(amarela?.stages[3]?.unlocked).toBe(false);
   });
+
+  it("unlocks prior adult belts when registered as Roxa (no history)", () => {
+    const cards = buildJourneyBeltCollection({
+      age: 22,
+      currentBelt: "Roxa",
+      currentDegree: 1,
+      history: [],
+    });
+
+    expect(cards.map((c) => c.belt)).toEqual([
+      "Branca",
+      "Azul",
+      "Roxa",
+      "Marrom",
+      "Preta",
+      "Coral",
+      "Vermelha",
+    ]);
+    expect(cards.find((c) => c.belt === "Branca")?.unlocked).toBe(true);
+    expect(cards.find((c) => c.belt === "Branca")?.highestDegree).toBe(4);
+    expect(cards.find((c) => c.belt === "Azul")?.unlocked).toBe(true);
+    expect(cards.find((c) => c.belt === "Azul")?.highestDegree).toBe(4);
+    expect(cards.find((c) => c.belt === "Roxa")?.unlocked).toBe(true);
+    expect(cards.find((c) => c.belt === "Roxa")?.highestDegree).toBe(1);
+    expect(cards.find((c) => c.belt === "Marrom")?.unlocked).toBe(false);
+    expect(cards.some((c) => c.belt.includes("Cinza"))).toBe(false);
+  });
+
+  it("unlocks prior kids belts without unlocking adult path", () => {
+    const cards = buildJourneyBeltCollection({
+      age: 11,
+      currentBelt: "Laranja",
+      currentDegree: 0,
+      history: [],
+    });
+
+    expect(cards.find((c) => c.belt === "Branca")?.unlocked).toBe(true);
+    expect(cards.find((c) => c.belt === "Cinza")?.unlocked).toBe(true);
+    expect(cards.find((c) => c.belt === "Amarela")?.unlocked).toBe(true);
+    expect(cards.find((c) => c.belt === "Laranja")?.unlocked).toBe(true);
+    expect(cards.find((c) => c.belt === "Laranja / Preta")?.unlocked).toBe(
+      false,
+    );
+    expect(cards.some((c) => c.belt === "Azul")).toBe(false);
+  });
 });

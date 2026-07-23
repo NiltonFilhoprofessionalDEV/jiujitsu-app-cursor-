@@ -1,5 +1,5 @@
 import {
-  beltSequenceForAge,
+  beltSequenceForMember,
   hasUnlockedBelt,
   unlockedDegreeForBelt,
   type BeltAgeOverride,
@@ -71,18 +71,28 @@ export function buildJourneyBeltCollection(input: {
   history: JourneyBeltHistoryRow[];
   ageOverrides?: BeltAgeOverride[];
 }): JourneyBeltCard[] {
-  const sequence = beltSequenceForAge(input.age, input.ageOverrides);
   const currentBelt = input.currentBelt || "Branca";
   const currentDegree = Math.max(0, Math.min(4, input.currentDegree));
+  const sequence = beltSequenceForMember(
+    input.age,
+    currentBelt,
+    input.ageOverrides,
+  );
 
   return sequence.map((belt) => {
-    const unlocked = hasUnlockedBelt(belt, input.history, currentBelt);
+    const unlocked = hasUnlockedBelt(
+      belt,
+      input.history,
+      currentBelt,
+      sequence,
+    );
     const highest = unlocked
       ? (unlockedDegreeForBelt(
           belt,
           input.history,
           currentBelt,
           currentDegree,
+          sequence,
         ) ?? 0)
       : null;
     const displayDegree = highest ?? 0;

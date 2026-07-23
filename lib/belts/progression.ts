@@ -124,6 +124,7 @@ export function unlockedDegreeForBelt(
   history: { belt: string; degree: number }[],
   currentBelt: string,
   currentDegree: number,
+  sequence?: readonly string[],
 ): number | null {
   let max: number | null = null;
   for (const row of history) {
@@ -133,6 +134,10 @@ export function unlockedDegreeForBelt(
   if (currentBelt === belt) {
     max = max == null ? currentDegree : Math.max(max, currentDegree);
   }
+  // Faixas anteriores na trilha: tratadas como concluídas (4 graus).
+  if (sequence && isPriorBeltInSequence(belt, currentBelt, sequence)) {
+    max = max == null ? DEGREES_PER_BELT : Math.max(max, DEGREES_PER_BELT);
+  }
   return max;
 }
 
@@ -140,7 +145,52 @@ export function hasUnlockedBelt(
   belt: string,
   history: { belt: string; degree: number }[],
   currentBelt: string,
+  sequence?: readonly string[],
 ): boolean {
   if (currentBelt === belt) return true;
-  return history.some((h) => h.belt === belt);
+  if (history.some((h) => h.belt === belt)) return true;
+  return Boolean(sequence && isPriorBeltInSequence(belt, currentBelt, sequence));
+}
+
+function isPriorBeltInSequence(
+  belt: string,
+  currentBelt: string,
+  sequence: readonly string[],
+): boolean {
+  const currentIndex = sequence.indexOf(currentBelt);
+  const beltIndex = sequence.indexOf(belt);
+  return currentIndex >= 0 && beltIndex >= 0 && beltIndex < currentIndex;
+}
+
+/**
+ * Sequence used for journey unlocks.
+ * Prefers age when known; otherwise infers kids vs adult from the current belt
+ * so a Roxa without birth_date still unlocks Branca→Azul (not kids belts).
+ */
+export function beltSequenceForMember(
+  age: number | null,
+  currentBelt: string,
+  overrides?: BeltAgeOverride[],
+): BeltOption[] {
+  if (age != null) {
+    const seq = beltSequenceForAge(age, overrides);
+    if (seq.includes(currentBelt as BeltOption)) return seq;
+  }
+
+  const meta = DEFAULT_BELT_AGE_RANGES[currentBelt];
+  const track = meta?.track ?? "both";
+
+  if (track === "adult" || (age != null && age >= 16)) {
+    return beltSequenceForAge(Math.max(age ?? 16, 16), overrides);
+  }
+
+  if (track === "kids") {
+    return BELT_OPTIONS.filter((belt) => {
+      const m = DEFAULT_BELT_AGE_RANGES[belt];
+      return Boolean(m && m.track !== "adult");
+    });
+  }
+
+  // Branca / unknown — age path (or full list if age null).
+  return beltSequenceForAge(age, overrides);
 }
