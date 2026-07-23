@@ -209,7 +209,7 @@ function UnitCard({
               id={`active-${unit.id}`}
               name="is_active"
               defaultValue={unit.is_active ? "true" : "false"}
-              className="flex h-11 w-full rounded-xl border border-input bg-transparent px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+              className="flex h-11 w-full rounded-xl border border-input bg-card px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
             >
               <option value="true">Ativa</option>
               <option value="false">Inativa</option>
