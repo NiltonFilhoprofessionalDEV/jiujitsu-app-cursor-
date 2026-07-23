@@ -44,21 +44,57 @@ export type BeltRequirementFormRow = {
   maxAge: number | "";
 };
 
+function isMissingAgeColumnError(error: {
+  message?: string;
+  code?: string;
+  details?: string;
+  hint?: string;
+}): boolean {
+  const haystack = [error.message, error.details, error.hint]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return (
+    haystack.includes("min_age") ||
+    haystack.includes("max_age") ||
+    error.code === "42703"
+  );
+}
+
 export async function listBeltRequirements(): Promise<BeltRequirement[]> {
   const member = await getActiveMembership();
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const withAges = await supabase
     .from("academy_belt_requirements")
     .select("belt, classes_per_degree, min_age, max_age")
     .eq("academy_id", member.academy_id);
 
-  if (error) throw error;
+  if (!withAges.error) {
+    return (withAges.data ?? []).map((row) => ({
+      belt: row.belt as string,
+      classesPerDegree: Number(row.classes_per_degree),
+      minAge: (row.min_age as number | null) ?? null,
+      maxAge: (row.max_age as number | null) ?? null,
+    }));
+  }
 
-  return (data ?? []).map((row) => ({
+  // Migration 0024 not applied yet — keep Journey/home usable.
+  if (!isMissingAgeColumnError(withAges.error)) {
+    throw withAges.error;
+  }
+
+  const legacy = await supabase
+    .from("academy_belt_requirements")
+    .select("belt, classes_per_degree")
+    .eq("academy_id", member.academy_id);
+
+  if (legacy.error) throw legacy.error;
+
+  return (legacy.data ?? []).map((row) => ({
     belt: row.belt as string,
     classesPerDegree: Number(row.classes_per_degree),
-    minAge: (row.min_age as number | null) ?? null,
-    maxAge: (row.max_age as number | null) ?? null,
+    minAge: null,
+    maxAge: null,
   }));
 }
 
