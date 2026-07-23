@@ -43,25 +43,34 @@ describe("suggestNextGraduationForAge", () => {
 });
 
 describe("buildJourneyBeltCollection", () => {
-  it("marks current belt unlocked with degrees", () => {
+  it("marks current belt unlocked with 4 degree pips and dates", () => {
     const cards = buildJourneyBeltCollection({
       age: 12,
       currentBelt: "Amarela",
       currentDegree: 2,
       history: [
-        { belt: "Branca", degree: 4 },
-        { belt: "Cinza / Branca", degree: 4 },
-        { belt: "Cinza", degree: 4 },
-        { belt: "Cinza / Preta", degree: 4 },
-        { belt: "Amarela / Branca", degree: 4 },
-        { belt: "Amarela", degree: 2 },
+        { belt: "Branca", degree: 0, graduatedAt: "2020-01-10" },
+        { belt: "Branca", degree: 4, graduatedAt: "2021-06-01" },
+        { belt: "Cinza / Branca", degree: 4, graduatedAt: "2022-01-01" },
+        { belt: "Cinza", degree: 4, graduatedAt: "2022-06-01" },
+        { belt: "Cinza / Preta", degree: 4, graduatedAt: "2023-01-01" },
+        { belt: "Amarela / Branca", degree: 4, graduatedAt: "2023-06-01" },
+        { belt: "Amarela", degree: 0, graduatedAt: "2024-01-15" },
+        { belt: "Amarela", degree: 1, graduatedAt: "2024-06-01" },
+        { belt: "Amarela", degree: 2, graduatedAt: "2025-01-10" },
       ],
     });
     const amarela = cards.find((c) => c.belt === "Amarela");
     expect(amarela?.unlocked).toBe(true);
     expect(amarela?.highestDegree).toBe(2);
-    expect(amarela?.degrees.filter((d) => d.unlocked).map((d) => d.degree)).toEqual(
-      [0, 1, 2],
-    );
+    expect(amarela?.degrees).toHaveLength(4);
+    expect(amarela?.degrees.map((d) => d.degree)).toEqual([1, 2, 3, 4]);
+    expect(
+      amarela?.degrees.filter((d) => d.unlocked).map((d) => d.degree),
+    ).toEqual([1, 2]);
+    expect(amarela?.stages).toHaveLength(5);
+    expect(amarela?.stages[0]?.earnedAt).toBe("2024-01-15");
+    expect(amarela?.stages[2]?.earnedAt).toBe("2025-01-10");
+    expect(amarela?.stages[3]?.unlocked).toBe(false);
   });
 });

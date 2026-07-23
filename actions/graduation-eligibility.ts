@@ -93,17 +93,31 @@ export async function checkAndNotifyGraduationEligibility(
       (target.joined_at as string | null) ??
       null;
 
-    const { data: reqRows } = await supabase
+    const withAges = await supabase
       .from("academy_belt_requirements")
       .select("belt, classes_per_degree, min_age, max_age")
       .eq("academy_id", academyId);
 
-    const requirements: BeltRequirement[] = (reqRows ?? []).map((row) => ({
-      belt: row.belt as string,
-      classesPerDegree: Number(row.classes_per_degree),
-      minAge: (row.min_age as number | null) ?? null,
-      maxAge: (row.max_age as number | null) ?? null,
-    }));
+    let requirements: BeltRequirement[];
+    if (!withAges.error) {
+      requirements = (withAges.data ?? []).map((row) => ({
+        belt: row.belt as string,
+        classesPerDegree: Number(row.classes_per_degree),
+        minAge: (row.min_age as number | null) ?? null,
+        maxAge: (row.max_age as number | null) ?? null,
+      }));
+    } else {
+      const legacy = await supabase
+        .from("academy_belt_requirements")
+        .select("belt, classes_per_degree")
+        .eq("academy_id", academyId);
+      requirements = (legacy.data ?? []).map((row) => ({
+        belt: row.belt as string,
+        classesPerDegree: Number(row.classes_per_degree),
+        minAge: null,
+        maxAge: null,
+      }));
+    }
 
     const profile = target.profiles as
       | { name: string; birth_date: string | null }

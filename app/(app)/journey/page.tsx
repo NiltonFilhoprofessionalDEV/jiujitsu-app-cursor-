@@ -31,13 +31,23 @@ export default async function JourneyPage({
     redirect("/select-academy");
   }
 
-  const [beltProgress, beltCollection] =
-    data.track === "student"
-      ? await Promise.all([
-          getMemberBeltProgress(),
-          getJourneyBeltCollection(),
-        ])
-      : [null, null];
+  let beltProgress: Awaited<ReturnType<typeof getMemberBeltProgress>> = null;
+  let beltCollection: Awaited<
+    ReturnType<typeof getJourneyBeltCollection>
+  > = null;
+
+  if (data.track === "student") {
+    try {
+      [beltProgress, beltCollection] = await Promise.all([
+        getMemberBeltProgress(),
+        getJourneyBeltCollection(),
+      ]);
+    } catch {
+      // Faixas/progresso são extras — não derrubar a página inteira.
+      beltProgress = null;
+      beltCollection = null;
+    }
+  }
 
   const description =
     data.track === "teaching"

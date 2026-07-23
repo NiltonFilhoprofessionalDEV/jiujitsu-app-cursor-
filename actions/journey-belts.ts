@@ -40,8 +40,9 @@ export async function getJourneyBeltCollection(): Promise<JourneyBeltCollection 
   const [{ data: history }, requirements] = await Promise.all([
     supabase
       .from("graduation_history")
-      .select("belt, degree")
-      .eq("member_id", membership.id),
+      .select("belt, degree, graduated_at")
+      .eq("member_id", membership.id)
+      .order("graduated_at", { ascending: true }),
     listBeltRequirements(),
   ]);
 
@@ -52,6 +53,7 @@ export async function getJourneyBeltCollection(): Promise<JourneyBeltCollection 
     history: (history ?? []).map((h) => ({
       belt: h.belt as string,
       degree: Number(h.degree ?? 0),
+      graduatedAt: (h.graduated_at as string | null) ?? null,
     })),
     ageOverrides: requirements.map((r) => ({
       belt: r.belt,
