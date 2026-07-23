@@ -2,60 +2,10 @@
 
 import { useState } from "react";
 import { Lock } from "lucide-react";
-import { beltSwatch, beltNeedsDarkInk } from "@/lib/belts/colors";
+import { BeltDegreeDetailSheet } from "@/components/journey/belt-degree-detail-sheet";
+import { BeltDegreeVisual } from "@/components/journey/belt-degree-visual";
 import type { JourneyBeltCard } from "@/lib/journey/belt-collection";
 import { cn } from "@/lib/utils";
-
-function BeltDegreeVisual({
-  belt,
-  degree,
-  unlocked,
-  imageSrc,
-}: {
-  belt: string;
-  degree: number;
-  unlocked: boolean;
-  imageSrc: string;
-}) {
-  const [imgFailed, setImgFailed] = useState(false);
-  const swatch = beltSwatch(belt);
-  const darkInk = beltNeedsDarkInk(belt);
-
-  if (!imgFailed) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={imageSrc}
-        alt={`${belt}${degree > 0 ? ` · ${degree}º grau` : ""}`}
-        className={cn(
-          "h-14 w-14 object-contain sm:h-12 sm:w-12",
-          !unlocked && "opacity-40 grayscale",
-        )}
-        onError={() => setImgFailed(true)}
-      />
-    );
-  }
-
-  return (
-    <div
-      className={cn(
-        "relative flex h-14 w-14 items-center justify-center rounded-full ring-2 ring-border sm:h-12 sm:w-12",
-        !unlocked && "opacity-50",
-      )}
-      style={{ backgroundColor: swatch }}
-      aria-hidden
-    >
-      <span
-        className={cn(
-          "text-[10px] font-bold tabular-nums",
-          darkInk ? "text-neutral-900" : "text-white",
-        )}
-      >
-        {degree > 0 ? `${degree}º` : "•"}
-      </span>
-    </div>
-  );
-}
 
 export function BeltDegreeSection({
   cards,
@@ -66,6 +16,8 @@ export function BeltDegreeSection({
   age: number | null;
   ageMissing: boolean;
 }) {
+  const [selected, setSelected] = useState<JourneyBeltCard | null>(null);
+
   return (
     <section className="space-y-3.5 sm:space-y-3">
       <div className="flex items-end justify-between gap-2">
@@ -74,7 +26,7 @@ export function BeltDegreeSection({
             Faixas e graus
           </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Conquistas na sua trilha
+            Toque numa faixa para ver fotos e datas
             {age != null ? ` · ${age} anos` : ""}
           </p>
         </div>
@@ -89,10 +41,13 @@ export function BeltDegreeSection({
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-2">
         {cards.map((card) => (
-          <div
+          <button
             key={card.belt}
+            type="button"
+            onClick={() => setSelected(card)}
             className={cn(
-              "relative flex min-h-[9rem] flex-col items-center gap-2 rounded-2xl border border-border bg-card p-3.5 text-center shadow-[var(--surface-shadow)] backdrop-blur-xl sm:min-h-0 sm:gap-1.5 sm:p-3",
+              "relative flex min-h-[9rem] flex-col items-center gap-2 rounded-2xl border border-border bg-card p-3.5 text-center shadow-[var(--surface-shadow)] backdrop-blur-xl transition active:scale-[0.98] sm:min-h-0 sm:gap-1.5 sm:p-3",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--action-red)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               !card.unlocked && "opacity-75",
               card.isCurrent && "ring-2 ring-[var(--action-red)]",
             )}
@@ -119,7 +74,7 @@ export function BeltDegreeSection({
               >
                 {card.belt}
               </p>
-              <div className="flex justify-center gap-1">
+              <div className="flex justify-center gap-1" aria-hidden>
                 {card.degrees.map((d) => (
                   <span
                     key={d.degree}
@@ -141,9 +96,17 @@ export function BeltDegreeSection({
                   : "Bloqueada"}
               </p>
             </div>
-          </div>
+          </button>
         ))}
       </div>
+
+      <BeltDegreeDetailSheet
+        card={selected}
+        open={selected != null}
+        onOpenChange={(open) => {
+          if (!open) setSelected(null);
+        }}
+      />
     </section>
   );
 }
