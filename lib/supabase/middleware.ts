@@ -27,6 +27,7 @@ const PUBLIC_PREFIXES = [
   "/signup",
   "/invite",
   "/owner-invite",
+  "/preview",
 ] as const;
 
 function isProtectedPath(pathname: string): boolean {
@@ -46,35 +47,46 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
-          );
-        },
+  const { pathname } = request.nextUrl;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // Allow static/preview browsing without .env.local (no Supabase).
+  if (!supabaseUrl || !supabaseAnonKey) {
+    if (isPublicPath(pathname) || pathname.startsWith("/belts")) {
+      return supabaseResponse;
+    }
+    if (isProtectedPath(pathname)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/preview/belts";
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value),
+        );
+        supabaseResponse = NextResponse.next({
+          request,
+        });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options),
+        );
       },
     },
-  );
+  });
 
   // Do not run code between createServerClient and auth.getUser().
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
 
   if (!user && isProtectedPath(pathname) && !isPublicPath(pathname)) {
     const url = request.nextUrl.clone();
